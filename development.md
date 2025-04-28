@@ -9,19 +9,19 @@
 ### 阶段性目标
 
 1. **阶段一（当前）**: 
-   - 完成核心框架实现
-   - 开发基础模块集
-   - 提供基本序列化/反序列化支持
+   - 完成核心框架实现 ✅
+   - 开发基础模块集 ✅
+   - 提供基本序列化/反序列化支持 ✅
 
-2. **阶段二**:
-   - 开发Web界面
-   - 实现更多专业模块
-   - 支持工作流导入/导出
+2. **阶段二（进行中）**:
+   - 开发Web界面 🔄
+   - 实现更多专业模块 🔄
+   - 支持工作流导入/导出 🔄
 
-3. **阶段三**:
-   - 提供云部署支持
-   - 开发团队协作功能
-   - 实现工作流市场
+3. **阶段三（规划中）**:
+   - 提供云部署支持 📅
+   - 开发团队协作功能 📅
+   - 实现工作流市场 📅
 
 ### 应用场景
 
@@ -41,13 +41,15 @@
 ## 项目概况
 
 **当前版本**: 0.1.0
-**整体完成度**: 基础功能已完成
-**最近更新日期**: 2023-06-15
+**整体完成度**: 基础功能已完成，前端开发中
+**最近更新日期**: 2025-04-25
 **主要功能列表**:
 - 模块化工作流系统框架
 - 基础模块注册和管理
 - 工作流执行引擎
 - 示例模块和工作流
+- 初步的前端结构设计
+
 **技术栈概述**:
 - 前端: React + React-flow + ECharts + Ant Design
 - 后端: Python + FastAPI(可选)
@@ -56,31 +58,56 @@
 
 ## 项目目录结构
 
-### 主要目录
+### 当前实际目录结构
 
-- **workflow/**: 工作流系统核心包
-  - **core/**: 核心组件实现
-    - **base_module.py**: 模块基类及接口定义
-    - **workflow.py**: 工作流类实现
-    - **module_registry.py**: 模块注册表实现
-    - **engine.py**: 工作流执行引擎实现
-  - **examples/**: 示例模块和工作流
-    - **example_modules.py**: 预定义模块实现
-    - **example_workflow.py**: 示例工作流
-    - **example_workflow.json**: 序列化后的工作流示例
-  - **__init__.py**: 包初始化和接口导出
+```
+Workflow-plus/
+├── backend/                 # 后端代码
+│   ├── core/                # 核心组件实现
+│   │   ├── base_module.py   # 模块基类及接口定义
+│   │   ├── engine.py        # 工作流执行引擎实现
+│   │   ├── module_registry.py # 模块注册表实现
+│   │   ├── workflow.py      # 工作流类实现
+│   │   └── __init__.py      # 包初始化和接口导出
+│   ├── examples/            # 示例模块和工作流
+│   │   ├── example_modules.py # 预定义模块实现
+│   │   ├── example_workflow.py # 示例工作流
+│   │   ├── example_workflow.json # 序列化后的工作流示例
+│   │   └── __init__.py      # 包初始化
+│   └── __init__.py          # 后端包初始化
+├── frontend/                # 前端界面（正在开发）
+│   ├── node_modules/        # npm依赖
+│   ├── public/              # 静态资源
+│   ├── src/                 # 源代码
+│   │   ├── assets/          # 资源文件
+│   │   ├── App.tsx          # 主应用组件
+│   │   ├── main.tsx         # 应用入口
+│   │   └── ...              # 其他前端文件
+│   ├── src-tauri/           # Tauri桌面应用配置
+│   ├── package.json         # npm包配置
+│   ├── vite.config.ts       # Vite构建配置
+│   └── ...                  # 其他配置文件
+├── .gitignore               # Git忽略文件配置
+├── README.md                # 项目说明文档
+├── development.md           # 开发状态文档（本文件）
+└── build_reference.md       # 构建参考文档
+```
 
 ### 配置文件
 
 - **.gitignore**: Git忽略规则配置
 - **README.md**: 项目概述和使用说明
 - **development.md**: 开发状态文档
+- **build_reference.md**: 构建参考文档，包含技术栈配置指南
 
 ### 依赖关系
 
-- **核心依赖**: workflow.core 包含系统核心组件，不依赖其他内部模块
-- **示例依赖**: workflow.examples 依赖 workflow.core 实现示例功能
-- **外部依赖**: 目前仅依赖Python标准库，无第三方依赖
+- **核心依赖**: backend.core 包含系统核心组件，不依赖其他内部模块
+- **示例依赖**: backend.examples 依赖 backend.core 实现示例功能
+- **前端依赖**: 依赖React生态组件，包括react-flow进行工作流可视化
+- **外部依赖**: 
+  - 后端目前仅依赖Python标准库，无第三方依赖
+  - 前端依赖详见frontend/package.json
 
 ## 核心组件状态
 
@@ -88,6 +115,7 @@
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/core/base_module.py`
 
 **已实现功能**:
 - 基础模块抽象类定义
@@ -108,6 +136,7 @@
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/core/workflow.py`
 
 **已实现功能**:
 - 工作流创建和管理
@@ -129,6 +158,7 @@
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/core/module_registry.py`
 
 **已实现功能**:
 - 模块注册机制
@@ -148,6 +178,7 @@
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/core/engine.py`
 
 **已实现功能**:
 - 工作流执行逻辑
@@ -174,6 +205,7 @@
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/examples/example_modules.py`
 
 **功能描述**:
 生成随机数或指定范围内的数值，可配置输出数值的类型和范围。
@@ -199,6 +231,7 @@ result = num_gen.execute({})  # 返回 {"number": 15} (随机值)
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/examples/example_modules.py`
 
 **功能描述**:
 执行基本数学运算，支持加减乘除等操作。
@@ -225,6 +258,7 @@ result = math_op.execute({"input1": 5, "input2": 3})  # 返回 {"result": 8}
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/examples/example_modules.py`
 
 **功能描述**:
 对输入数据进行转换处理，支持类型转换、格式化等操作。
@@ -250,6 +284,7 @@ result = transform.execute({"input": 42})  # 返回 {"output": "值: 42"}
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/examples/example_modules.py`
 
 **功能描述**:
 根据条件过滤输入数据。
@@ -275,6 +310,7 @@ result = filter_mod.execute({"input": [3, 7, 2, 9, 4]})  # 返回 {"output": [7,
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/examples/example_modules.py`
 
 **功能描述**:
 读取文件内容。
@@ -298,6 +334,7 @@ result = reader.execute({"file_path": "data.txt"})  # 返回 {"content": "文件
 
 **状态**: 已完成 ✅
 **版本**: 1.0
+**文件位置**: `backend/examples/example_modules.py`
 
 **功能描述**:
 将内容写入文件。
@@ -319,21 +356,58 @@ writer.set_parameter("mode", "w")
 result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  # 返回 {"success": True}
 ```
 
+## 前端开发状态
+
+### React应用
+
+**状态**: 开发中 🔄
+**版本**: 0.1.0
+**文件位置**: `frontend/src/`
+
+**已完成功能**:
+- 基础应用框架搭建
+- 项目依赖配置
+
+**进行中功能**:
+- 工作流编辑器界面
+- 模块面板组件
+- 连接管理逻辑
+
+**待实现功能**:
+- 工作流执行控制
+- 结果可视化
+- 工作流保存/加载
+
+### Tauri桌面应用
+
+**状态**: 配置中 🔄
+**版本**: 0.1.0
+**文件位置**: `frontend/src-tauri/`
+
+**已完成功能**:
+- 基础配置设置
+
+**进行中功能**:
+- Python后端通信集成
+
+**待实现功能**:
+- 应用打包配置
+- 跨平台兼容性测试
+
 ## 最近更新记录
 
-### 2023-06-15: 初始版本发布
+### 2023-06-25: 前端框架整合
 
 **主要变更**:
-- 完成核心组件实现
-- 添加基本示例模块
-- 创建示例工作流
-- 添加序列化/反序列化支持
+- 添加React前端框架
+- 配置Tauri桌面应用框架
+- 设计前后端通信方案
 
 **变更原因**:
-初始功能集实现完成，可以开始使用和测试。
+开始实现用户界面，为工作流提供可视化支持。
 
 **版本兼容性**:
-初始版本，无兼容性问题。
+需确保前端能正确调用后端API，与现有工作流引擎交互。
 
 ### 2023-06-20: 技术栈确定
 
@@ -349,7 +423,21 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
 **版本兼容性**:
 技术栈选择不影响当前核心组件兼容性。
 
-## 技术栈
+### 2023-06-15: 初始版本发布
+
+**主要变更**:
+- 完成核心组件实现
+- 添加基本示例模块
+- 创建示例工作流
+- 添加序列化/反序列化支持
+
+**变更原因**:
+初始功能集实现完成，可以开始使用和测试。
+
+**版本兼容性**:
+初始版本，无兼容性问题。
+
+## 技术栈详细说明
 
 ### 系统架构
 
@@ -357,15 +445,16 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
 
 ### 前端技术
 
-- **核心框架**: React
+- **核心框架**: React 18
 - **工作流交互**: React-flow
 - **数据可视化**: ECharts
 - **UI组件库**: Ant Design
+- **构建工具**: Vite
 
 ### 后端技术
 
-- **核心语言**: Python
-- **API框架**: FastAPI（可选）
+- **核心语言**: Python 3.8+
+- **API框架**: FastAPI（可选，用于Web服务）
 - **桌面端封装**: Tauri（轻量级Rust框架）
 
 ### 通信方式
@@ -378,16 +467,30 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
   - **复杂逻辑**: FastAPI
     - 不需要Rust代码
     - 需处理服务生命周期管理
+    - 适合Web部署模式
 
 ### 调试工具
 
-- **前端调试**: Chrome DevTools（`chrome://inspect`）
+- **前端调试**: Chrome DevTools 
 - **Rust调试**: VS Code + Rust Analyzer
 - **Python调试**: PyCharm/VS Code 断点调试
+
+### 部署模式
+
+- **桌面应用**: 通过Tauri打包为独立应用程序
+- **Web应用**: 可选部署为Web服务（需启用FastAPI后端）
+- **混合部署**: 支持桌面应用连接远程服务器
 
 ## 计划开发功能
 
 ### 短期计划 (1-2个月)
+
+- **前端工作流编辑器**:
+  - 节点拖拽交互
+  - 连接线管理
+  - 参数配置界面
+  - 优先级: 高
+  - 技术风险: 中
 
 - **更多预定义模块**:
   - 数据可视化模块
@@ -395,12 +498,6 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
   - 数据库操作模块
   - 优先级: 高
   - 技术风险: 低
-
-- **Web界面**:
-  - 基于React的工作流编辑器
-  - 工作流执行和监控页面
-  - 优先级: 中
-  - 技术风险: 中
 
 - **执行优化**:
   - 并行执行支持
@@ -428,6 +525,22 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
   - 优先级: 低
   - 技术风险: 中
 
+### 长期计划 (6个月以上)
+
+- **协作功能**:
+  - 多用户编辑
+  - 权限管理
+  - 工作流共享
+  - 优先级: 低
+  - 技术风险: 高
+
+- **云部署支持**:
+  - 远程执行
+  - 资源管理
+  - 横向扩展
+  - 优先级: 低
+  - 技术风险: 高
+
 ## 代码规范
 
 ### 通用规范
@@ -452,16 +565,53 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
   - 模块成员变量: 使用_前缀（如self._id）
   - 全局变量: 使用g前缀（如gmodule_registry）
 
-### JavaScript/React代码规范（前端计划）
+### JavaScript/TypeScript代码规范
 
 - **格式化**: 使用Prettier，ESLint检查
 - **组件**: 优先使用函数组件和Hooks
 - **状态管理**: 使用React Context或Redux
+- **类型**: 使用TypeScript进行类型定义
 - **命名约定**:
   - 组件: 使用PascalCase（如WorkflowEditor）
   - 函数/变量: 使用camelCase（如connectModules）
   - 常量: 使用UPPER_CASE（如DEFAULT_SETTINGS）
+  - 接口: 使用I前缀（如IModuleProps）
 - **文件组织**: 每个组件一个文件，与组件同名
+
+## 贡献指南
+
+### 开发环境设置
+
+1. **后端开发环境**:
+   - Python 3.8+
+   - 无需第三方依赖（目前）
+
+2. **前端开发环境**:
+   - Node.js 16+
+   - npm 8+
+   - 安装依赖：`cd frontend && npm install`
+
+3. **Tauri开发环境**:
+   - 按照[Tauri官方文档](https://tauri.app/v1/guides/getting-started/prerequisites)设置
+
+### 开发流程
+
+1. **分支管理**:
+   - `main`: 稳定分支
+   - `dev`: 开发分支
+   - 功能分支: `feature/xxx`
+   - 修复分支: `fix/xxx`
+
+2. **提交规范**:
+   - 使用语义化提交信息
+   - 格式: `<type>: <description>`
+   - 常用类型: feat, fix, docs, refactor, test
+
+### 测试指南
+
+- **后端测试**: 编写单元测试，确保核心组件稳定性
+- **前端测试**: 组件测试 + 集成测试
+- **E2E测试**: 待实现
 
 ## 最佳实践
 
@@ -480,6 +630,14 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
 - **异常处理**: 合理处理异常，不允许异常传播到模块外部
 - **执行幂等性**: 模块执行应尽可能设计为幂等操作
 - **参数默认值**: 为参数提供合理的默认值，提高易用性
+
+### 前端开发指南
+
+- **组件设计**: 遵循组件化思想，合理拆分组件
+- **状态管理**: 谨慎选择状态管理方式，避免不必要的复杂性
+- **性能优化**: 注意大数据量下的渲染性能
+- **响应式设计**: 支持不同屏幕尺寸
+- **主题支持**: 考虑明暗主题切换
 
 ### 测试策略
 
