@@ -1,0 +1,86 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 自定义模块开发指南
+
+本指南说明如何为工作流系统开发自定义模块。
+
+## 基本步骤
+
+1. 继承 [BaseModule](mdc:workflow/core/base_module.py) 类
+2. 定义输入/输出端口
+3. 实现 `execute` 方法
+4. 实现 `from_dict` 类方法
+5. 向 [gmodule_registry](mdc:workflow/core/module_registry.py) 注册模块
+
+## 基本模板
+
+以下是一个自定义模块的基本模板：
+
+```python
+from workflow import BaseModule
+from typing import Dict, Any
+
+class MyCustomModule(BaseModule):
+    def __init__(self, name: str = "自定义模块", description: str = ""):
+        super().__init__(name, description)
+        
+        # 添加输入输出端口
+        self.add_input_port("input1", "any", "输入数据1")
+        self.add_input_port("input2", "any", "输入数据2")
+        self.add_output_port("output", "any", "处理结果")
+        
+        # 添加参数
+        self.set_parameter("param1", "默认值")
+    
+    def execute(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        # 获取输入
+        input1 = inputs.get("input1")
+        input2 = inputs.get("input2")
+        
+        # 获取参数
+        param1 = self.get_parameter("param1")
+        
+        # 处理逻辑
+        result = f"{input1} - {input2} - {param1}"
+        
+        # 返回结果
+        return {"output": result}
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'MyCustomModule':
+        module = cls(data.get('name', '自定义模块'), data.get('description', ''))
+        module._id = data['id']
+        
+        # 恢复参数
+        for key, value in data.get('parameters', {}).items():
+            module.set_parameter(key, value)
+            
+        # 恢复位置信息
+        if 'position' in data:
+            module.position = tuple(data['position'])
+        
+        return module
+```
+
+## 注册自定义模块
+
+创建完自定义模块后，需要将其注册到模块注册表中：
+
+```python
+from workflow import gmodule_registry
+from my_module import MyCustomModule
+
+# 将模块注册到指定分类下
+gmodule_registry.register(MyCustomModule, "自定义模块")
+```
+
+## 高级功能
+
+- **异步执行**：重写 `execute_async` 方法实现异步处理
+- **验证功能**：重写 `validate_inputs` 方法实现输入验证
+- **自定义序列化**：重写 `to_dict` 方法实现自定义序列化
+- **状态管理**：使用 `set_state` 和 `get_state` 方法管理内部状态
+

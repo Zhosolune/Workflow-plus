@@ -1,0 +1,48 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 工作流系统核心组件
+
+工作流系统由以下核心组件构成：
+
+## BaseModule
+
+[base_module.py](mdc:workflow/core/base_module.py) 定义了模块的基本属性和方法，是所有自定义模块的基类。
+
+主要功能：
+- 定义输入/输出端口
+- 管理模块参数
+- 提供序列化/反序列化接口
+- 定义模块执行接口
+
+## Workflow
+
+[workflow.py](mdc:workflow/core/workflow.py) 负责管理工作流中的模块和连接关系。
+
+主要功能：
+- 添加/删除模块
+- 创建/删除模块间的连接
+- 提供序列化/反序列化功能
+- 验证工作流结构合法性
+
+## ModuleRegistry
+
+[module_registry.py](mdc:workflow/core/module_registry.py) 负责管理模块类型和创建模块实例。
+
+主要功能：
+- 注册模块类型
+- 创建模块实例
+- 管理模块分类
+
+## WorkflowEngine
+
+[engine.py](mdc:workflow/core/engine.py) 负责工作流的执行和控制。
+
+主要功能：
+- 创建和管理工作流
+- 执行工作流（支持同步和异步模式）
+- 提供进度回调和状态监控
+- 管理执行结果
+

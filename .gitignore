@@ -1,0 +1,81 @@
+# 前端相关忽略项
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+coverage/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+
+# Tauri/Rust相关忽略项
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/WixTools/
+src-tauri/gen/
+
+# Python后端相关忽略项
+*.py[cod]
+*$py.class
+__pycache__/
+*.so
+.Python
+venv/
+env/
+.venv/
+.env/
+*.egg-info/
+*.egg
+
+# 系统相关忽略项
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE和编辑器相关忽略项
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# 杂项
+.log/
+.cache/
+.tmp/
+
+# 其他
+build_reference.md
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

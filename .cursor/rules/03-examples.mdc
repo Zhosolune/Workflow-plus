@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 工作流系统使用示例
+
+工作流系统提供了丰富的示例，展示如何使用和扩展系统。
+
+## 示例模块
+
+[example_modules.py](mdc:workflow/examples/example_modules.py) 提供了多种预定义模块实现，包括：
+
+- 数据生成模块
+- 数学运算模块
+- 逻辑操作模块
+- 数据转换模块
+- 文件操作模块
+
+这些模块展示了如何创建自定义模块及各种常见模块模式。
+
+## 示例工作流
+
+[example_workflow.py](mdc:workflow/examples/example_workflow.py) 展示了如何：
+
+- 创建和配置工作流
+- 添加和连接模块
+- 执行工作流并获取结果
+- 保存和加载工作流
+
+## 工作流序列化
+
+[example_workflow.json](mdc:workflow/examples/example_workflow.json) 展示了工作流序列化后的JSON结构，可用于持久化存储和与前端交互。
+
+## 快速开始
+
+使用示例工作流可以帮助您快速了解系统的基本用法：
+
+```python
+# 引入必要的类
+from workflow import WorkflowEngine, BaseModule, Workflow, gmodule_registry
+from workflow.examples.example_modules import NumberGeneratorModule, MathOperationModule
+
+# 注册模块
+gmodule_registry.register(NumberGeneratorModule, "基础")
+gmodule_registry.register(MathOperationModule, "基础")
+
+# 创建工作流引擎
+engine = WorkflowEngine(gmodule_registry)
+
+# 创建工作流
+workflow = engine.create_workflow("我的工作流")
+
+# 创建和连接模块
+# ...
+
+# 执行工作流
+engine.execute()
+```
+
