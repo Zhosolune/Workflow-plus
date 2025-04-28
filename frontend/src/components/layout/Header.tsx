@@ -13,11 +13,17 @@ import {
 
 const { Header } = Layout;
 
+// 定义 HeaderComponent 的 props 类型
+interface HeaderProps {
+  currentTheme: 'light' | 'dark';
+  toggleTheme: () => void;
+}
+
 /**
  * 顶部栏组件
  * 包含全局图标按钮，如软件名，用户头像，主题切换，语言，通知，提示等
  */
-const HeaderComponent: React.FC = () => {
+const HeaderComponent: React.FC<HeaderProps> = ({ currentTheme, toggleTheme }) => {
   const { token } = theme.useToken();
 
   // 用户下拉菜单项
@@ -56,9 +62,12 @@ const HeaderComponent: React.FC = () => {
       {/* 右侧功能按钮 */}
       <Space size="large">
         {/* 主题切换 */}
-        <Button type="text" icon={<SunOutlined style={{ fontSize: '18px' }} />} style={{ fontSize: '18px' }}  onClick={() => {
-          
-        }}/>
+        <Button 
+          type="text" 
+          icon={currentTheme === 'light' ? <MoonOutlined style={{ fontSize: '18px' }} /> : <SunOutlined style={{ fontSize: '18px' }} />} 
+          style={{ fontSize: '18px' }}  
+          onClick={toggleTheme} // 点击时调用切换主题函数
+        />
 
         {/* 语言切换 */}
         <Button type="text" icon={<GlobalOutlined style={{ fontSize: '18px' }} />} style={{ fontSize: '18px' }} />
