@@ -162,7 +162,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode }) => {
         borderRadius: '4px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}
-      bodyStyle={{ padding: '12px', overflow: 'auto', height: 'calc(100% - 57px)' }}
+      styles={{ body: { padding: '12px', overflow: 'auto', height: 'calc(100% - 57px)' } }}
     >
       {renderPropertyForm()}
     </Card>

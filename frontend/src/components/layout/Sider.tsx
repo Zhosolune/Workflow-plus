@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, Typography } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DashboardOutlined,
@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
+const { Title } = Typography;
 
 // 侧边栏菜单项配置
 const menuItems = [
@@ -65,23 +66,77 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
       collapsible
       collapsed={collapsed}
       onCollapse={onCollapse}
-      trigger={
-        collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
-      }
+      trigger={null} // 不显示默认触发器，我们将使用自定义标题区域
       theme="light"
-      width={220}
+      width={250}
+      collapsedWidth={60}
       style={{
-        boxShadow: '2px 0 8px 0 rgba(29,35,41,0.05)',
+        boxShadow: '2px 0 8px -3px rgba(29,35,41,0.15)',
         zIndex: 10,
       }}
     >
+      {/* 侧边栏顶部标题和折叠按钮 */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: collapsed ? 'center' : 'space-between',
+        padding: '12px 16px',
+        height: '60px',
+      }}>
+        <div style={{
+          opacity: collapsed ? 0 : 1,
+          width: collapsed ? 0 : 'auto',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          transition: 'opacity 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0.2s cubic-bezier(0.645, 0.045, 0.355, 1)',
+        }}>
+          <Title level={5} style={{ margin: 0 }}>导航菜单</Title>
+        </div>
+        <div 
+          onClick={onCollapse}
+          style={{ 
+            cursor: 'pointer',
+            fontSize: '16px',
+            padding: '4px 8px',
+          }}
+        >
+          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        </div>
+      </div>
+
       <Menu
         mode="inline"
         selectedKeys={[location.pathname]}
         items={menuItems}
         onClick={({ key }) => handleMenuClick(key)}
-        style={{ height: '100%', borderRight: 0 }}
+        style={{ 
+          height: 'calc(100% - 48px)', 
+          borderRight: 0,
+          fontSize: '15px',
+          transition: 'all 0.2s',
+        }}
       />
+
+      {/* 添加样式来调整菜单项高度和图标大小 */}
+      <style>
+        {`
+          /* 让菜单文字和图标的过渡与侧边栏宽度变化同步 */
+          .ant-menu-item, .ant-menu-item-icon, .ant-menu-title-content {
+            transition: width 0.2s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
+          }
+
+          /* 调整菜单项高度和图标大小 */
+          .ant-menu-item {
+            height: 50px !important;
+            line-height: 50px !important;
+          }
+          
+          .ant-menu-item .anticon {
+            font-size: 16px !important;
+          }
+          
+        `}
+      </style>
     </Sider>
   );
 };

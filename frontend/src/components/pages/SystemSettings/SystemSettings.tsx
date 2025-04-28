@@ -33,7 +33,7 @@ const SystemSettings: React.FC = () => {
       key: '1',
       label: '基本设置',
       children: (
-        <Card bordered={false}>
+        <Card variant="borderless">
           <Form layout="vertical" onFinish={handleSaveBasicSettings} initialValues={{
             systemName: '工作流平台',
             language: 'zh-CN',
@@ -70,7 +70,7 @@ const SystemSettings: React.FC = () => {
       key: '2',
       label: '安全设置',
       children: (
-        <Card bordered={false}>
+        <Card variant="borderless">
           <Form layout="vertical" onFinish={handleSaveSecuritySettings} initialValues={{
             passwordExpiration: 30,
             twoFactorAuth: false,
@@ -97,7 +97,7 @@ const SystemSettings: React.FC = () => {
       key: '3',
       label: '高级设置',
       children: (
-        <Card bordered={false}>
+        <Card variant="borderless">
           <Form layout="vertical" onFinish={handleSaveAdvancedSettings} initialValues={{
             maxFileSize: 50,
             concurrentTasks: 5,
