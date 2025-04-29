@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Form, Input, InputNumber, Select, Switch, Typography, Empty } from 'antd';
+import ResizeHandle from './ResizeHandle';
 
 const { Option } = Select;
 
@@ -13,10 +14,21 @@ interface PropertyPanelProps {
  * 根据选中的节点类型，显示不同的属性配置选项
  */
 const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode }) => {
+  // 卡片宽度和位置状态
+  const [width, setWidth] = useState(280);
+  const [rightPosition, setRightPosition] = useState(10);
+  
   // 处理表单值变更
   const handleValueChange = (changedValues: any) => {
     console.log('属性变更:', changedValues);
     // 在实际应用中，这里会更新节点属性
+  };
+  
+  // 处理拖拽调整大小 - 直接设置新宽度
+  const handleResize = (newWidth: number) => {
+    setWidth(newWidth);
+    // 保持右侧位置不变
+    setRightPosition(10);
   };
   
   // 根据节点类型渲染不同的属性表单
@@ -149,23 +161,47 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode }) => {
     );
   };
 
+  // 计算卡片样式
+  const cardStyle = {
+    width: width,
+    position: 'absolute' as const,
+    right: rightPosition,
+    top: 10,
+    bottom: 10,
+    zIndex: 10,
+    borderRadius: '4px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  };
+
+  // 计算父容器样式，确保与卡片大小相同
+  const containerStyle = {
+    position: 'absolute' as const,
+    right: rightPosition,
+    top: 10,
+    bottom: 10,
+    width: width,
+    zIndex: 10,
+  };
+
   return (
-    <Card
-      title="属性面板"
-      style={{
-        width: 280,
-        position: 'absolute',
-        right: 10,
-        top: 10,
-        bottom: 10,
-        zIndex: 10,
-        borderRadius: '4px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-      }}
-      bodyStyle={{ padding: '12px', overflow: 'auto', height: 'calc(100% - 57px)' }}
-    >
-      {renderPropertyForm()}
-    </Card>
+    <div style={containerStyle}>
+      <Card
+        title="属性面板"
+        style={cardStyle}
+        styles={{ body: { padding: '12px', overflow: 'auto', height: 'calc(100% - 57px)' } }}
+      >
+        {renderPropertyForm()}
+      </Card>
+      
+      {/* 添加拖拽手柄，调整位置到Card左侧边缘 */}
+      <ResizeHandle 
+        position="left" 
+        width={width}
+        onResize={handleResize}
+        minWidth={200}
+        maxWidth={600}
+      />
+    </div>
   );
 };
 

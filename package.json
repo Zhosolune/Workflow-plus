@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@xyflow/react": "^12.6.0",
-    "react-router-dom": "^7.5.2"
-  }
-}

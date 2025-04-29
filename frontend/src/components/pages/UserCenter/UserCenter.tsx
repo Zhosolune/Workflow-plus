@@ -26,7 +26,7 @@ const UserCenter: React.FC = () => {
       key: '1',
       label: '基本资料',
       children: (
-        <Card bordered={false}>
+        <Card variant="borderless">
           <div style={{ display: 'flex', marginBottom: 20 }}>
             <Avatar size={64} icon={<UserOutlined />} />
             <div style={{ marginLeft: 20 }}>
@@ -70,7 +70,7 @@ const UserCenter: React.FC = () => {
       key: '2',
       label: '账号安全',
       children: (
-        <Card bordered={false}>
+        <Card variant="borderless">
           <Form layout="vertical" onFinish={handleChangePassword}>
             <Form.Item
               label="当前密码"
@@ -118,7 +118,7 @@ const UserCenter: React.FC = () => {
       key: '3',
       label: '账号信息',
       children: (
-        <Card bordered={false}>
+        <Card variant="borderless">
           <Descriptions title="账号详情" bordered>
             <Descriptions.Item label="账号ID">admin001</Descriptions.Item>
             <Descriptions.Item label="注册时间">2023-01-01</Descriptions.Item>
