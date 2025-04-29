@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, Typography } from 'antd';
+import { Layout, Menu, Typography, Tooltip } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DashboardOutlined,
@@ -92,19 +92,21 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
         }}>
           <Title level={5} style={{ margin: 0 }}>导航菜单</Title>
         </div>
-        <div 
-          className="sider-collapse-button"
-          onClick={onCollapse}
-          style={{ 
-            cursor: 'pointer',
-            fontSize: '20px',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            transition: 'background-color 0.2s',
-          }}
-        >
-          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </div>
+        <Tooltip placement="right" title={collapsed ? <span>展开</span> : <span>折叠</span>}>
+          <div 
+            className="sider-collapse-button"
+            onClick={onCollapse}
+            style={{ 
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: '14px 18px',
+              borderRadius: '10px',
+              transition: 'background-color 0.2s',
+            }}
+          >
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </div>
+        </Tooltip>
       </div>
 
       <Menu

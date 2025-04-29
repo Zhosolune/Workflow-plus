@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Input, Collapse, List, Typography } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useDraggable } from '@dnd-kit/core';
+import ResizeHandle from './ResizeHandle';
 
 const { Panel } = Collapse;
 const { Search } = Input;
@@ -93,6 +94,9 @@ const ModuleLibrary: React.FC = () => {
   // 搜索关键词
   const [searchValue, setSearchValue] = useState('');
   
+  // 卡片宽度状态
+  const [width, setWidth] = useState(280);
+  
   // 处理搜索
   const handleSearch = (value: string) => {
     setSearchValue(value);
@@ -106,57 +110,84 @@ const ModuleLibrary: React.FC = () => {
     );
   };
 
+  // 处理拖拽调整大小 - 直接设置新宽度
+  const handleResize = (newWidth: number) => {
+    setWidth(newWidth);
+  };
+
+  // 计算卡片位置和样式
+  const cardStyle = {
+    width: width,
+    position: 'absolute' as const,
+    left: 10,
+    top: 10,
+    bottom: 10,
+    zIndex: 10,
+    borderRadius: '4px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  };
+
+  // 父容器样式，添加相同的尺寸和位置
+  const containerStyle = {
+    position: 'absolute' as const,
+    left: 10,
+    top: 10,
+    bottom: 10,
+    width: width,
+    zIndex: 10,
+  };
+
   return (
-    <Card
-      title="模块库"
-      style={{
-        width: 280,
-        position: 'absolute',
-        left: 10,
-        top: 10,
-        bottom: 10,
-        zIndex: 10,
-        borderRadius: '4px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-      }}
-      styles={{ body: { padding: '8px', overflow: 'auto', height: 'calc(100% - 57px)' } }}
-    >
-      {/* 搜索框 */}
-      <Search
-        placeholder="搜索模块..."
-        onSearch={handleSearch}
-        onChange={(e) => handleSearch(e.target.value)}
-        style={{ marginBottom: 8 }}
-        prefix={<SearchOutlined />}
-      />
+    <div style={containerStyle}>
+      <Card
+        title="模块库"
+        style={cardStyle}
+        styles={{ body: { padding: '8px', overflow: 'auto', height: 'calc(100% - 57px)' } }}
+      >
+        {/* 搜索框 */}
+        <Search
+          placeholder="搜索模块..."
+          onSearch={handleSearch}
+          onChange={(e) => handleSearch(e.target.value)}
+          style={{ marginBottom: 8 }}
+          prefix={<SearchOutlined />}
+        />
+        
+        {/* 使用老式API方式渲染Collapse组件以避免类型问题 */}
+        <Collapse defaultActiveKey={['data-source']} ghost>
+          {moduleCategories.map((category) => {
+            const filteredModules = getFilteredModules(category.modules);
+            
+            // 如果搜索后没有匹配的模块，则不显示此分类
+            if (searchValue && filteredModules.length === 0) {
+              return null;
+            }
+            
+            return (
+              <Panel key={category.key} header={category.title}>
+                <List
+                  dataSource={filteredModules}
+                  renderItem={(module) => (
+                    <List.Item style={{ padding: 0 }}>
+                      <DraggableModule module={module} />
+                    </List.Item>
+                  )}
+                />
+              </Panel>
+            );
+          })}
+        </Collapse>
+      </Card>
       
-      {/* 模块分类 */}
-      <Collapse defaultActiveKey={['data-source']} ghost items={
-        moduleCategories.map((category) => {
-          const filteredModules = getFilteredModules(category.modules);
-          
-          // 如果搜索后没有匹配的模块，则不显示此分类
-          if (searchValue && filteredModules.length === 0) {
-            return null;
-          }
-          
-          return {
-            key: category.key,
-            label: category.title,
-            children: (
-              <List
-                dataSource={filteredModules}
-                renderItem={(module) => (
-                  <List.Item style={{ padding: 0 }}>
-                    <DraggableModule module={module} />
-                  </List.Item>
-                )}
-              />
-            )
-          };
-        }).filter(Boolean)
-      } />
-    </Card>
+      {/* 添加拖拽手柄，位置调整到Card右侧边缘 */}
+      <ResizeHandle
+        position="right"
+        width={width}
+        onResize={handleResize}
+        minWidth={200}
+        maxWidth={600}
+      />
+    </div>
   );
 };
 
