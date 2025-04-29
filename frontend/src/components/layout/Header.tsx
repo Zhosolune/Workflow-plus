@@ -13,7 +13,6 @@ import {
 
 const { Header } = Layout;
 
-// 定义 HeaderComponent 的 props 类型
 interface HeaderProps {
   currentTheme: 'light' | 'dark';
   toggleTheme: () => void;

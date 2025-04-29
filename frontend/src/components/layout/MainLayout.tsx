@@ -31,7 +31,7 @@ const MainLayout: React.FC = () => {
     <ConfigProvider
       theme={{
         algorithm: currentTheme === 'light' ? defaultAlgorithm : darkAlgorithm,
-        // 您可以在这里添加其他全局主题配置，例如主色调
+        // 可以在这里添加其他全局主题配置，例如主色调
         // token: {
         //   colorPrimary: '#somecolor',
         // },
@@ -46,7 +46,7 @@ const MainLayout: React.FC = () => {
           <SiderComponent collapsed={collapsed} onCollapse={toggleCollapsed} />
           
           {/* 内容区 */}
-          <Content style={{ /*padding: '20px',*/ overflow: 'auto' }}>
+          <Content style={{ overflow: 'hidden' }}>
             <Outlet />
           </Content>
         </Layout>

@@ -66,7 +66,7 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
       collapsible
       collapsed={collapsed}
       onCollapse={onCollapse}
-      trigger={null} // 不显示默认触发器，我们将使用自定义标题区域
+      trigger={null}
       theme="light"
       width={250}
       collapsedWidth={60}
@@ -93,11 +93,14 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
           <Title level={5} style={{ margin: 0 }}>导航菜单</Title>
         </div>
         <div 
+          className="sider-collapse-button"
           onClick={onCollapse}
           style={{ 
             cursor: 'pointer',
-            fontSize: '16px',
-            padding: '4px 8px',
+            fontSize: '20px',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            transition: 'background-color 0.2s',
           }}
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -110,14 +113,14 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
         items={menuItems}
         onClick={({ key }) => handleMenuClick(key)}
         style={{ 
-          height: 'calc(100% - 48px)', 
+          height: 'calc(100% - 60px)', 
           borderRight: 0,
           fontSize: '15px',
           transition: 'all 0.2s',
         }}
       />
 
-      {/* 添加样式来调整菜单项高度和图标大小 */}
+      {/* 调整菜单项高度和图标大小 */}
       <style>
         {`
           /* 让菜单文字和图标的过渡与侧边栏宽度变化同步 */
@@ -133,6 +136,17 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
           
           .ant-menu-item .anticon {
             font-size: 16px !important;
+          }
+
+          /* 为折叠按钮添加 hover 和active 效果 */
+          .sider-collapse-button:hover {
+            background-color: #efefef!important;
+          }
+
+          .sider-collapse-button:active {
+            background-color: #efefef!important;
+            color: #3F75FB!important;
+
           }
           
         `}

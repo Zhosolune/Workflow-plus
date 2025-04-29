@@ -85,6 +85,7 @@ const WorkflowDesigner: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           margin: 0,
+          flexShrink: 0,  //防止 Header 被压缩
         }}
       >
         <div 
@@ -122,7 +123,12 @@ const WorkflowDesigner: React.FC = () => {
       </Header>
 
       {/* 主内容区 */}
-      <Content style={{ position: 'relative', height: 'calc(100% - 48px - 30px)' }}>
+      <Content 
+        style={{ 
+          position: 'relative', 
+          height: 'calc(100% - 60px - 30px)', 
+          overflow: 'hidden',
+        }}>
         {/* 画布 */}
         <Canvas
           onNodeSelect={handleNodeSelect}
