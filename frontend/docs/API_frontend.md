@@ -90,9 +90,26 @@ interface HeaderProps {
 }
 ```
 
-#### 菜单项
+#### 状态管理
 
-用户菜单包含以下选项：
+通过Ant Design的theme hook获取当前主题配置：
+```typescript
+const { token } = theme.useToken();
+```
+
+#### 主要功能按钮
+
+Header组件包含以下功能按钮：
+- 主题切换: 在明暗主题间切换 (MoonOutlined/SunOutlined)
+- 语言切换: 多语言支持 (GlobalOutlined)
+- 帮助: 显示帮助信息 (QuestionCircleOutlined)
+- 通知: 显示系统通知 (BellOutlined)
+- 设置: 系统设置 (SettingOutlined)
+- 用户头像: 用户相关操作 (UserOutlined)
+
+#### 用户菜单项
+
+用户头像下拉菜单包含以下选项：
 - 个人中心
 - 账户设置
 - 退出登录
@@ -120,14 +137,55 @@ interface SiderProps {
 }
 ```
 
-#### 菜单项
+#### 菜单项配置
 
-侧边栏提供以下导航选项：
-- 仪表盘: `/dashboard`
-- 工作流设计: `/workflow`
-- 文件管理: `/files`
-- 系统设置: `/settings`
-- 个人中心: `/user`
+```typescript
+const menuItems = [
+  {
+    key: '/dashboard',
+    icon: <DashboardOutlined />,
+    label: '仪表盘',
+  },
+  {
+    key: '/workflow',
+    icon: <ApiOutlined />,
+    label: '工作流设计',
+  },
+  {
+    key: '/files',
+    icon: <FolderOutlined />,
+    label: '文件管理',
+  },
+  {
+    key: '/settings',
+    icon: <SettingOutlined />,
+    label: '系统设置',
+  },
+  {
+    key: '/user',
+    icon: <UserOutlined />,
+    label: '个人中心',
+  },
+];
+```
+
+#### 主要方法
+
+```typescript
+// 处理菜单项点击，导航到对应路由
+const handleMenuClick = (key: string) => {
+  navigate(key);
+};
+```
+
+#### 样式特性
+
+- 可折叠侧边栏，折叠时宽度为60px，展开时为250px
+- 浅色主题(theme="light")
+- 侧边栏顶部有标题和折叠按钮
+- 定制化菜单项样式
+- 悬停反馈和点击反馈效果
+- 折叠按钮有tooltip提示
 
 #### 使用示例
 
@@ -567,5 +625,5 @@ const deserializeWorkflow = (json: string): { nodes: Node[], edges: Edge[] } => 
 
 ## 版本记录
 
-**当前版本**: 0.1.0
+**当前版本**: 0.1.1
 **最近更新**: 2025-04-29 
