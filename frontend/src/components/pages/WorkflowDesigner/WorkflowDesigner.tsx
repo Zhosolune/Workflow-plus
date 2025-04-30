@@ -77,7 +77,7 @@ const WorkflowDesigner: React.FC = () => {
       <Header
         style={{
           background: '#fff',
-          padding: '0 21px',
+          padding: '0 20px',
           boxShadow: '0 2px 16px rgba(0,0,0,0.2)',
           height: '60px',
           lineHeight: '60px',
