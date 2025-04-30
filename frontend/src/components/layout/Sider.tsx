@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, Typography, Tooltip } from 'antd';
+import { Layout, Menu, Typography, Tooltip, theme } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DashboardOutlined,
@@ -55,12 +55,8 @@ interface SiderProps {
 const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // 处理菜单项点击，导航到对应路由
-  const handleMenuClick = (key: string) => {
-    navigate(key);
-  };
-  
+  const { token } = theme.useToken();
+
   return (
     <Sider
       collapsible
@@ -76,32 +72,36 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
       }}
     >
       {/* 侧边栏顶部标题和折叠按钮 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: collapsed ? 'center' : 'space-between',
-        padding: '12px 16px',
-        height: '60px',
-      }}>
-        <div style={{
-          opacity: collapsed ? 0 : 1,
-          width: collapsed ? 0 : 'auto',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          transition: 'opacity 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0.2s cubic-bezier(0.645, 0.045, 0.355, 1)',
-        }}>
-          <Title level={5} style={{ margin: 0 }}>导航菜单</Title>
-        </div>
-        <Tooltip placement="right" title={collapsed ? <span>展开</span> : <span>折叠</span>}>
-          <div 
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          padding: '12px 16px',
+          height: '60px',
+        }}
+      >
+        {collapsed ? null : (
+          <div style={{
+            opacity: collapsed ? 0 : 1,
+            width: collapsed ? 0 : 'auto',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            transition: 'opacity 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0.2s cubic-bezier(0.645, 0.045, 0.355, 1)',
+          }}>
+            <Title level={5} style={{ margin: 0 }}>导航菜单</Title>
+          </div>
+        )}
+        <Tooltip placement="right" title={collapsed ? '展开' : '折叠'}>
+          <div
             className="sider-collapse-button"
             onClick={onCollapse}
-            style={{ 
+            style={{
               cursor: 'pointer',
               fontSize: '16px',
               padding: '14px 18px',
-              borderRadius: '10px',
-              transition: 'background-color 0.2s',
+              borderRadius: token.borderRadiusLG,
+              transition: `background-color ${token.motionDurationMid}`,
             }}
           >
             {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -113,12 +113,10 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
         mode="inline"
         selectedKeys={[location.pathname]}
         items={menuItems}
-        onClick={({ key }) => handleMenuClick(key)}
-        style={{ 
-          height: 'calc(100% - 60px)', 
+        onClick={({ key }) => navigate(key)}
+        style={{
+          height: 'calc(100% - 60px)',
           borderRight: 0,
-          fontSize: '15px',
-          transition: 'all 0.2s',
         }}
       />
 
