@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Typography, Tooltip, theme } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -56,6 +56,13 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = theme.useToken();
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+
+  // 处理点击折叠按钮
+  const handleCollapseClick = () => {
+    setTooltipOpen(false);
+    onCollapse();
+  }
 
   return (
     <Sider
@@ -83,8 +90,8 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
       >
         {collapsed ? null : (
           <div style={{
-            opacity: collapsed ? 0 : 1,
-            width: collapsed ? 0 : 'auto',
+            opacity: 1,
+            width: 'auto',
             overflow: 'hidden',
             whiteSpace: 'nowrap',
             transition: 'opacity 0.2s cubic-bezier(0.645, 0.045, 0.355, 1), width 0.2s cubic-bezier(0.645, 0.045, 0.355, 1)',
@@ -92,10 +99,16 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
             <Title level={5} style={{ margin: 0 }}>导航菜单</Title>
           </div>
         )}
-        <Tooltip placement="right" title={collapsed ? '展开' : '折叠'}>
+        <Tooltip 
+          placement="right" 
+          title={collapsed ? '展开' : '折叠'}
+          open={tooltipOpen}
+          onOpenChange={setTooltipOpen}
+          trigger="hover"
+        >
           <div
             className="sider-collapse-button"
-            onClick={onCollapse}
+            onClick={handleCollapseClick}
             style={{
               cursor: 'pointer',
               fontSize: '16px',
