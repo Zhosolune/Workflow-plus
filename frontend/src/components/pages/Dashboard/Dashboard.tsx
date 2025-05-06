@@ -86,7 +86,34 @@ const Dashboard: React.FC = () => {
         {/* 最近活动 */}
         <Row style={{ marginTop: 20, }}>
           <Col span={24}>
-            <Card title="最近活动" variant="borderless">
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
+              <p>暂无活动记录</p>
+            </Card>
+            <Card title="最近活动" variant="borderless" style={{ marginBottom: 20 }}>
               <p>暂无活动记录</p>
             </Card>
           </Col>

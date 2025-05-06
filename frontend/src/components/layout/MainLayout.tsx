@@ -37,16 +37,28 @@ const MainLayout: React.FC = () => {
         // },
       }}
     >
-      <Layout style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      <Layout style={{ 
+        height: '100vh', 
+        width: '100vw', 
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
         {/* 顶部栏，传递当前主题和切换函数 */}
         <HeaderComponent currentTheme={_currentTheme} toggleTheme={toggleTheme} />
         
-        <Layout>
+        <Layout style={{
+          flex: 1,
+          overflow: 'hidden'
+        }}>
           {/* 侧边栏 */}
           <SiderComponent collapsed={_collapsed} onCollapse={toggleCollapsed} />
           
           {/* 内容区 */}
-          <Content style={{ flex: 1 }}>
+          <Content style={{ 
+            flex: 1,
+            minHeight: 0 // 确保内容区可以正确滚动
+          }}>
             <Outlet />
           </Content>
         </Layout>
