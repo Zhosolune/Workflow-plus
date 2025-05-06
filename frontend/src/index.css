@@ -40,13 +40,11 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  overflow: hidden;
 }
 
 #root {
   width: 100%;
   height: 100vh;
-  /* overflow: hidden; */
 }
 
 /* 工作流节点样式 */

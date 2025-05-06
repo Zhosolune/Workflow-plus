@@ -37,21 +37,19 @@ const MainLayout: React.FC = () => {
         // },
       }}
     >
-      <Layout style={{ height: '100vh', width: '100vw' }}>
-        <Flex vertical flex={1}>
-          {/* 顶部栏，传递当前主题和切换函数 */}
-          <HeaderComponent currentTheme={_currentTheme} toggleTheme={toggleTheme} />
-
-          <Flex flex={1}>
-            {/* 侧边栏 */}
-            <SiderComponent collapsed={_collapsed} onCollapse={toggleCollapsed} />
-
-            {/* 内容区 */}
-            <Content style={{ overflow: 'hidden', flex: 1 }}>
-              <Outlet />
-            </Content>
-          </Flex>
-        </Flex>
+      <Layout style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        {/* 顶部栏，传递当前主题和切换函数 */}
+        <HeaderComponent currentTheme={_currentTheme} toggleTheme={toggleTheme} />
+        
+        <Layout>
+          {/* 侧边栏 */}
+          <SiderComponent collapsed={_collapsed} onCollapse={toggleCollapsed} />
+          
+          {/* 内容区 */}
+          <Content style={{ flex: 1 }}>
+            <Outlet />
+          </Content>
+        </Layout>
       </Layout>
     </ConfigProvider>
   );

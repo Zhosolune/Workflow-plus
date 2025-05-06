@@ -48,8 +48,12 @@ const HeaderComponent: React.FC<HeaderProps> = ({ currentTheme, toggleTheme }) =
     <Header
       style={{
         background: token.colorBgContainer,
+        // boxShadow: `0 1px 0 0 ${token.colorBorderSecondary}`,
         borderBottom: `1px solid ${token.colorBorderSecondary}`,
         padding: '0 20px',
+        height: '64px',
+        lineHeight: '64px',
+        flexShrink: 0
       }}
     >
       <Flex align='center' justify='space-between'>

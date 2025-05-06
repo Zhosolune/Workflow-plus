@@ -74,7 +74,7 @@ const SiderComponent: React.FC<SiderProps> = ({ collapsed, onCollapse }) => {
       width={250}
       collapsedWidth={60}
       style={{
-        boxShadow: '2px 0 8px -3px rgba(29,35,41,0.15)',
+        boxShadow: `2px 0 8px -3px ${token.colorBorderSecondary}`,
         zIndex: 10,
       }}
     >

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col, Layout, Statistic, Space } from 'antd';
+import { Card, Row, Col, Layout, Statistic, Space, theme } from 'antd';
 import {
   AppstoreOutlined,
   FileOutlined,
@@ -14,14 +14,15 @@ const { Header, Footer, Content } = Layout;
  * 显示系统概览信息
  */
 const Dashboard: React.FC = () => {
+  const { token } = theme.useToken();
   return (
-    <Layout className="dashboard-page" style={{ height: '100vh' }}>
+    <Layout className="dashboard-page" style={{ height: '100%' }}>
       {/* 顶部操作栏 */}
       <Header
         style={{
           background: '#fff',
           padding: '0 20px',
-          boxShadow: '0 2px 8px -3px rgba(0,0,0,0.15)',
+          boxShadow: `0 2px 8px -3px ${token.colorBorderSecondary}`,
           height: '60px',
           lineHeight: '60px',
           display: 'flex',
@@ -41,7 +42,6 @@ const Dashboard: React.FC = () => {
           padding: '20px', 
           flex: 1,
           overflow: 'auto',
-          maxHeight: 'calc(100% - 60px - 30px - 65px)'
         }}>
         {/* 统计卡片 */}
         <Row gutter={[16, 16]}>

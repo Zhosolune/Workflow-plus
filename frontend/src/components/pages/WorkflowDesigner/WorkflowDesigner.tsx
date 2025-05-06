@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Button, Space } from 'antd';
+import { Layout, Button, Space, theme } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -18,6 +18,7 @@ const { Header, Footer, Content } = Layout;
  * 包含顶部操作栏、模块库、画布和属性面板
  */
 const WorkflowDesigner: React.FC = () => {
+  const { token } = theme.useToken();
   // 当前选中的节点
   const [selectedNode, setSelectedNode] = useState<any>(null);
   
@@ -78,7 +79,7 @@ const WorkflowDesigner: React.FC = () => {
         style={{
           background: '#fff',
           padding: '0 20px',
-          boxShadow: '0 2px 16px rgba(0,0,0,0.2)',
+          boxShadow: `0 2px 8px -3px ${token.colorBorderSecondary}`,
           height: '60px',
           lineHeight: '60px',
           display: 'flex',
@@ -126,8 +127,7 @@ const WorkflowDesigner: React.FC = () => {
       <Content 
         style={{ 
           position: 'relative', 
-          height: 'calc(100% - 60px - 30px)', 
-          overflow: 'hidden',
+          flex: 1,
         }}>
         {/* 画布 */}
         <Canvas
@@ -151,7 +151,8 @@ const WorkflowDesigner: React.FC = () => {
           background: '#f0f2f5', 
           margin: 0,
           fontSize: '14px',
-          borderTop: '1px solid #e8e8e8'
+          borderTop: '1px solid #e8e8e8',
+          flexShrink: 0
         }}
       >
         <StatusBar status={workflowStatus} />
