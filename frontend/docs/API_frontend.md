@@ -15,9 +15,12 @@
   - [ModuleLibrary](#modulelibrary)
   - [PropertyPanel](#propertypanel)
   - [StatusBar](#statusbar)
+- [功能组件](#功能组件)
+- [自定义Hooks](#自定义Hooks)
 - [数据类型](#数据类型)
 - [工具函数](#工具函数)
 - [命名规范](#命名规范)
+- [版本记录](#版本记录)
 
 ## 整体架构
 
@@ -537,6 +540,145 @@ interface StatusBarProps {
 
 ```tsx
 <StatusBar status={workflowStatus} />
+```
+
+## 功能组件
+
+## 自定义Hooks
+
+### useResize
+
+**文件位置**: `frontend/src/hooks/useResize.ts`  
+**功能**: 处理元素大小调整的逻辑，支持拖拽调整大小
+
+#### 接口定义
+
+```typescript
+function useResize(
+  initialWidth: number,
+  onResizeCallback: (newWidth: number) => void,
+  minWidth?: number,
+  maxWidth?: number
+): {
+  isDragging: boolean;
+  isHovering: boolean;
+  handleMouseDown: (e: React.MouseEvent, position: 'left' | 'right') => void;
+  handleMouseEnter: () => void;
+  handleMouseLeave: () => void;
+  checkMousePosition: (e: MouseEvent, element: HTMLElement | null) => void;
+}
+```
+
+#### 参数说明
+
+- `initialWidth`: 初始宽度
+- `onResizeCallback`: 调整大小时的回调函数
+- `minWidth`: 最小宽度限制，默认值为200
+- `maxWidth`: 最大宽度限制，默认值为600
+
+#### 返回值
+
+- `isDragging`: 是否处于拖拽状态
+- `isHovering`: 是否处于悬停状态
+- `handleMouseDown`: 鼠标按下事件处理函数
+- `handleMouseEnter`: 鼠标进入事件处理函数
+- `handleMouseLeave`: 鼠标离开事件处理函数
+- `checkMousePosition`: 检查鼠标是否位于元素上的函数
+
+#### 使用示例
+
+```tsx
+import useResize from '../../../hooks/useResize';
+
+const MyComponent = () => {
+  const { 
+    isDragging, 
+    isHovering, 
+    handleMouseDown,
+    handleMouseEnter,
+    handleMouseLeave 
+  } = useResize(
+    300,                         // 初始宽度
+    (newWidth) => setWidth(newWidth),  // 宽度变化回调
+    200,                         // 最小宽度
+    600                          // 最大宽度
+  );
+  
+  return (
+    <div
+      onMouseDown={(e) => handleMouseDown(e, 'right')}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      拖拽手柄
+    </div>
+  );
+};
+```
+
+### useResponsiveLayout
+
+**文件位置**: `frontend/src/hooks/useResponsiveLayout.ts`  
+**功能**: 管理响应式布局，处理两个相邻卡片的宽度和窗口大小变化
+
+#### 接口定义
+
+```typescript
+function useResponsiveLayout(
+  contentRef: React.RefObject<HTMLDivElement>
+): {
+  moduleLibraryWidth: number;
+  propertyPanelWidth: number;
+  handleModuleLibraryResize: (newWidth: number) => void;
+  handlePropertyPanelResize: (newWidth: number) => void;
+  constants: {
+    MIN_CARD_WIDTH: number;
+    MAX_CARD_WIDTH: number;
+    INITIAL_CARD_WIDTH: number;
+  };
+}
+```
+
+#### 参数说明
+
+- `contentRef`: 内容容器的React引用，用于获取容器宽度
+
+#### 返回值
+
+- `moduleLibraryWidth`: 模块库当前宽度
+- `propertyPanelWidth`: 属性面板当前宽度
+- `handleModuleLibraryResize`: 调整模块库宽度的处理函数
+- `handlePropertyPanelResize`: 调整属性面板宽度的处理函数
+- `constants`: 包含卡片宽度相关常量的对象
+
+#### 使用示例
+
+```tsx
+import useResponsiveLayout from '../../../hooks/useResponsiveLayout';
+
+const MyComponent = () => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  const {
+    moduleLibraryWidth,
+    propertyPanelWidth,
+    handleModuleLibraryResize,
+    handlePropertyPanelResize
+  } = useResponsiveLayout(contentRef);
+  
+  return (
+    <div ref={contentRef}>
+      <ModuleLibrary 
+        width={moduleLibraryWidth}
+        onResize={handleModuleLibraryResize}
+      />
+      <PropertyPanel 
+        width={propertyPanelWidth}
+        onResize={handlePropertyPanelResize}
+      />
+    </div>
+  );
+};
 ```
 
 ## 数据类型

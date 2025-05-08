@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef } from 'react';
+import useResize from '../../../hooks/useResize';
 
 interface ResizeHandleProps {
   position: 'left' | 'right';        // 手柄位置
@@ -22,113 +23,14 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   // 引用拖拽手柄DOM元素
   const handleRef = useRef<HTMLDivElement>(null);
   
-  // 跟踪拖拽和悬停状态
-  const [isDragging, setIsDragging] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  
-  // 记录拖拽状态
-  const dragRef = useRef({
-    isDragging: false,
-    startX: 0,
-    startWidth: width
-  });
-
-  // 处理鼠标按下事件
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // 阻止事件传播和默认行为
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // 记录起始位置和宽度
-    dragRef.current = {
-      isDragging: true,
-      startX: e.clientX,
-      startWidth: width
-    };
-    
-    // 更新拖拽状态
-    setIsDragging(true);
-    
-    // 添加全局事件处理
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    // 设置鼠标样式
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none'; // 防止拖拽时选中文本
-  };
-
-  // 处理鼠标移动事件
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!dragRef.current.isDragging) return;
-    
-    // 计算总位移
-    const totalDeltaX = e.clientX - dragRef.current.startX;
-    
-    // 根据手柄位置计算新宽度
-    let newWidth;
-    if (position === 'right') {
-      // 右侧手柄：向右拖动增加宽度
-      newWidth = dragRef.current.startWidth + totalDeltaX;
-    } else {
-      // 左侧手柄：向左拖动增加宽度
-      newWidth = dragRef.current.startWidth - totalDeltaX;
-    }
-    
-    // 限制宽度范围
-    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
-    
-    // 调用回调函数，直接传递新宽度
-    onResize(newWidth);
-  };
-
-  // 处理鼠标释放事件
-  const handleMouseUp = (e: MouseEvent) => {
-    // 重置拖拽状态
-    dragRef.current.isDragging = false;
-    setIsDragging(false);
-    
-    // 同时重置悬停状态，避免颜色停留问题
-    setIsHovering(false);
-    
-    // 移除全局事件处理
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    
-    // 恢复鼠标样式
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-    
-    // 检查鼠标释放位置，如果在手柄上，重新设置悬停状态
-    setTimeout(() => {
-      // 使用setTimeout确保React状态更新完毕
-      checkMousePosition(e);
-    }, 0);
-  };
-  
-  // 检查鼠标位置是否在手柄上
-  const checkMousePosition = (e: MouseEvent) => {
-    if (!handleRef.current) return;
-    
-    const rect = handleRef.current.getBoundingClientRect();
-    const isInside = 
-      e.clientX >= rect.left && 
-      e.clientX <= rect.right && 
-      e.clientY >= rect.top && 
-      e.clientY <= rect.bottom;
-    
-    if (isInside) {
-      setIsHovering(true);
-    }
-  };
-
-  // 组件卸载时清理事件监听
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
+  // 使用自定义的resize hook处理拖拽逻辑
+  const {
+    isDragging,
+    isHovering,
+    handleMouseDown,
+    handleMouseEnter,
+    handleMouseLeave,
+  } = useResize(width, onResize, minWidth, maxWidth);
 
   // 根据状态确定手柄颜色
   const getBarColor = () => {
@@ -146,18 +48,6 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     transition: isDragging ? 'none' : 'background-color 0.2s', // 拖拽时禁用过渡效果
   };
 
-  // 处理鼠标进入事件
-  const handleMouseEnter = () => {
-    setIsHovering(true);
-  };
-
-  // 处理鼠标离开事件
-  const handleMouseLeave = () => {
-    if (!isDragging) {
-      setIsHovering(false);
-    }
-  };
-
   // 计算手柄位置，确保它处于卡片外侧
   const positionOffset = position === 'right' ? { right: '-30px' } : { left: '-30px' };
 
@@ -165,7 +55,7 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
     <div
       ref={handleRef}
       className={`resize-handle resize-handle-${position}`}
-      onMouseDown={handleMouseDown}
+      onMouseDown={(e) => handleMouseDown(e, position)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
