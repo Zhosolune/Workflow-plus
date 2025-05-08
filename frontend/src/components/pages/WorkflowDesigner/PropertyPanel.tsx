@@ -7,28 +7,22 @@ const { Option } = Select;
 // 属性面板Props接口
 interface PropertyPanelProps {
   selectedNode: any | null;
+  width: number;                      // 卡片宽度
+  onResize: (newWidth: number) => void; // 调整大小回调
 }
 
 /**
  * 属性面板组件
  * 根据选中的节点类型，显示不同的属性配置选项
  */
-const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode }) => {
-  // 卡片宽度和位置状态
-  const [width, setWidth] = useState(280);
-  const [rightPosition, setRightPosition] = useState(10);
+const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onResize }) => {
+  // 卡片位置状态
+  const [rightPosition] = useState(10);
   
   // 处理表单值变更
   const handleValueChange = (changedValues: any) => {
     console.log('属性变更:', changedValues);
     // 在实际应用中，这里会更新节点属性
-  };
-  
-  // 处理拖拽调整大小 - 直接设置新宽度
-  const handleResize = (newWidth: number) => {
-    setWidth(newWidth);
-    // 保持右侧位置不变
-    setRightPosition(10);
   };
   
   // 根据节点类型渲染不同的属性表单
@@ -197,7 +191,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode }) => {
       <ResizeHandle 
         position="left" 
         width={width}
-        onResize={handleResize}
+        onResize={onResize}
         minWidth={200}
         maxWidth={600}
       />

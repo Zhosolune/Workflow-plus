@@ -42,7 +42,7 @@
 
 **当前版本**: 0.1.0
 **整体完成度**: 基础功能已完成，前端开发中
-**最近更新日期**: 2025-04-25
+**最近更新日期**: 2025-04-29
 **主要功能列表**:
 - 模块化工作流系统框架
 - 基础模块注册和管理
@@ -471,18 +471,31 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
 - 用户菜单
 - 全局操作按钮
 - 通知中心
+- 主题切换功能
+- 语言切换支持
+- 帮助与设置入口
 
 **组件接口**:
 - **Props**: 
   - `currentTheme: 'light' | 'dark'` - 当前主题状态
   - `toggleTheme: () => void` - 切换主题的回调函数
-- **主要menu项**:
-  - 用户菜单: 个人中心、账户设置、退出登录
+- **主要功能按钮**:
+  - 主题切换: 在明暗主题间切换 (MoonOutlined/SunOutlined)
+  - 语言切换: 多语言支持 (GlobalOutlined)
+  - 帮助: 显示帮助信息 (QuestionCircleOutlined)
+  - 通知: 显示系统通知 (BellOutlined)
+  - 设置: 系统设置 (SettingOutlined)
+  - 用户头像: 用户相关操作 (UserOutlined)
+- **用户菜单项**:
+  - 个人中心
+  - 账户设置
+  - 退出登录
 
 **组件交互方式**:
 - 导航到不同页面
 - 显示用户信息
 - 提供全局操作入口
+- 切换系统主题
 
 #### Sider
 
@@ -498,10 +511,58 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
 - 可折叠设计
 - 菜单项图标
 - 当前选中状态
+- 折叠按钮tooltip提示
+- 自定义菜单样式
+- 平滑过渡动画效果
+
+**组件接口**:
+- **Props**: 
+  - `collapsed: boolean` - 侧边栏折叠状态
+  - `onCollapse: () => void` - 折叠状态切换回调
+- **菜单项配置**:
+  ```typescript
+  const menuItems = [
+    {
+      key: '/dashboard',
+      icon: <DashboardOutlined />,
+      label: '仪表盘',
+    },
+    {
+      key: '/workflow',
+      icon: <ApiOutlined />,
+      label: '工作流设计',
+    },
+    {
+      key: '/files',
+      icon: <FolderOutlined />,
+      label: '文件管理',
+    },
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: '系统设置',
+    },
+    {
+      key: '/user',
+      icon: <UserOutlined />,
+      label: '个人中心',
+    },
+  ];
+  ```
+- **主要方法**:
+  - `handleMenuClick(key: string)` - 处理菜单项点击，导航到对应路由
+
+**样式特性**:
+- 可折叠侧边栏，折叠时宽度为60px，展开时为250px
+- 浅色主题(theme="light")
+- 侧边栏顶部有标题和折叠按钮
+- 定制化菜单项样式
+- 悬停反馈和点击反馈效果
 
 **组件交互方式**:
 - 导航到不同功能页面
-- 管理菜单展开状态
+- 显示当前选中状态
+- 支持折叠与展开操作
 
 #### WorkflowDesigner
 
@@ -663,7 +724,21 @@ interface Module {
 
 ## 最近更新记录
 
-### 2025-04-29: 文档完善 - 组件接口记录
+### 2025-04-29: 布局组件文档更新与功能完善
+
+**主要变更**:
+- 更新Header组件的文档与功能描述
+- 完善Sider组件的接口文档与样式说明
+- 优化组件交互方式和样式特性描述
+- 同步更新API文档与开发状态文档
+
+**变更原因**:
+保持文档与实际实现的一致性，提供更详细的组件说明，便于前端开发团队理解和使用这些组件。
+
+**版本兼容性**:
+文档更新不影响代码兼容性，仅增强可读性和可维护性。
+
+### 2025-04-28: 文档完善 - 组件接口记录
 
 **主要变更**:
 - 为前端组件添加详细接口文档
@@ -691,7 +766,7 @@ interface Module {
 **版本兼容性**:
 前端组件设计与后端API保持一致，确保数据格式兼容。
 
-### 2025-04-28: 前端布局与路由实现
+### 2025-04-25: 前端布局与路由实现
 
 **主要变更**:
 - 实现应用主布局

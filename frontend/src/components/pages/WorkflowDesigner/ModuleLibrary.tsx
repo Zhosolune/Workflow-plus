@@ -86,16 +86,19 @@ const DraggableModule = ({ module }: { module: any }) => {
   );
 };
 
+// 模块库组件属性接口
+interface ModuleLibraryProps {
+  width: number;                      // 卡片宽度
+  onResize: (newWidth: number) => void; // 调整大小回调
+}
+
 /**
  * 模块库组件
  * 展示可拖拽的工作流模块
  */
-const ModuleLibrary: React.FC = () => {
+const ModuleLibrary: React.FC<ModuleLibraryProps> = ({ width, onResize }) => {
   // 搜索关键词
   const [searchValue, setSearchValue] = useState('');
-  
-  // 卡片宽度状态
-  const [width, setWidth] = useState(280);
   
   // 处理搜索
   const handleSearch = (value: string) => {
@@ -108,11 +111,6 @@ const ModuleLibrary: React.FC = () => {
     return modules.filter(module => 
       module.name.toLowerCase().includes(searchValue.toLowerCase())
     );
-  };
-
-  // 处理拖拽调整大小 - 直接设置新宽度
-  const handleResize = (newWidth: number) => {
-    setWidth(newWidth);
   };
 
   // 计算卡片位置和样式
@@ -183,7 +181,7 @@ const ModuleLibrary: React.FC = () => {
       <ResizeHandle
         position="right"
         width={width}
-        onResize={handleResize}
+        onResize={onResize}
         minWidth={200}
         maxWidth={600}
       />

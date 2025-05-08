@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Button, Space, Dropdown, theme, Avatar } from 'antd';
+import { Layout, Button, Flex, Space, Dropdown, theme, Avatar } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   UserOutlined,
@@ -9,6 +9,7 @@ import {
   SettingOutlined,
   SunOutlined,
   MoonOutlined,
+  ProductOutlined,
 } from '@ant-design/icons';
 
 const { Header } = Layout;
@@ -24,6 +25,8 @@ interface HeaderProps {
  */
 const HeaderComponent: React.FC<HeaderProps> = ({ currentTheme, toggleTheme }) => {
   const { token } = theme.useToken();
+
+  const iconStyle = { fontSize: '18px' };
 
   // 用户下拉菜单项
   const userMenuItems: MenuProps['items'] = [
@@ -45,46 +48,57 @@ const HeaderComponent: React.FC<HeaderProps> = ({ currentTheme, toggleTheme }) =
     <Header
       style={{
         background: token.colorBgContainer,
-        borderBottom: '1px solid #f0f0f0',
-        padding: '0 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        /*boxShadow: '0 1px 4px rgba(0,21,41,.08)',*/
+        borderBottom: `1px solid ${token.colorBorderSecondary}`,
+        padding: '0 20px',
+        height: '64px',
+        minWidth: '800px',
+        lineHeight: '64px',
+        flexShrink: 0
       }}
     >
-      {/* 左侧logo和标题 */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '20px' }}>工作流平台</h1>
-      </div>
+      <Flex align='center' justify='space-between'>
+        {/* 左侧logo和标题 */}
+        <Space.Compact size={'large'}>
+          <ProductOutlined style={{ fontSize: '30px', color: '#3F75FB', paddingRight: '10px'}}/>
+          <h1 style={{ margin: 0, fontSize: '20px' }}>工作流平台</h1>
+        </Space.Compact>
 
-      {/* 右侧功能按钮 */}
-      <Space size="large">
-        {/* 主题切换 */}
-        <Button 
-          type="text" 
-          icon={currentTheme === 'light' ? <MoonOutlined style={{ fontSize: '18px' }} /> : <SunOutlined style={{ fontSize: '18px' }} />} 
-          style={{ fontSize: '18px' }}  
-          onClick={toggleTheme} // 点击时调用切换主题函数
-        />
+        {/* 右侧功能按钮 */}
+        <Space size="large">
+          {/* 主题切换 */}
+          <Button
+            type="text"
+            icon={currentTheme === 'light' 
+              ? <MoonOutlined style={iconStyle} /> 
+              : <SunOutlined style={iconStyle} />
+            }
+            onClick={toggleTheme} // 点击时调用切换主题函数
+          />
 
-        {/* 语言切换 */}
-        <Button type="text" icon={<GlobalOutlined style={{ fontSize: '18px' }} />} style={{ fontSize: '18px' }} />
-        
-        {/* 帮助 */}
-        <Button type="text" icon={<QuestionCircleOutlined style={{ fontSize: '18px' }} />} style={{ fontSize: '18px' }} />
-        
-        {/* 通知 */}
-        <Button type="text" icon={<BellOutlined style={{ fontSize: '18px' }} />} style={{ fontSize: '18px' }} />
-        
-        {/* 设置 */}
-        <Button type="text" icon={<SettingOutlined style={{ fontSize: '18px' }} />} style={{ fontSize: '18px' }} />
-        
-        {/* 用户头像 */}
-        <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-          <Avatar icon={<UserOutlined style={{ fontSize: '18px' }} />} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
-        </Dropdown>
-      </Space>
+          {/* 语言切换 */}
+          <Button type="text" icon={<GlobalOutlined style={iconStyle} />} />
+
+          {/* 帮助 */}
+          <Button type="text" icon={<QuestionCircleOutlined style={iconStyle} />} />
+
+          {/* 通知 */}
+          <Button type="text" icon={<BellOutlined style={iconStyle} />} />
+
+          {/* 设置 */}
+          <Button type="text" icon={<SettingOutlined style={iconStyle} />} />
+
+          {/* 用户头像 */}
+          <Dropdown menu={{ items: userMenuItems }}>
+            <Avatar 
+              icon={<UserOutlined style={iconStyle} />} 
+              style={{ 
+                cursor: 'pointer', 
+                display: 'flex' }} />
+          </Dropdown>
+        </Space>
+
+      </Flex>
+
     </Header>
   );
 };
