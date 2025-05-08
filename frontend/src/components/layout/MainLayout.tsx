@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, ConfigProvider, theme, Flex } from 'antd';
 import { Outlet } from 'react-router-dom';
 import HeaderComponent from './Header';
 import SiderComponent from './Sider';
+import useWindowSizeTracker from '../../hooks/useWindowSizeTracker';
 
 const { Content } = Layout;
 const { defaultAlgorithm, darkAlgorithm } = theme;
+
+// 定义窗口宽度阈值，小于等于此值时自动折叠侧边栏
+const gBREAKPOINT_WIDTH = 940;
 
 /**
  * 主布局组件
@@ -16,6 +20,17 @@ const MainLayout: React.FC = () => {
   const [_collapsed, setCollapsed] = useState(false);
   // 当前主题状态 ('light' 或 'dark')
   const [_currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
+  
+  // 使用专门的hook跟踪窗口大小变化
+  const { isSmallScreen, checkShouldCollapse } = useWindowSizeTracker(gBREAKPOINT_WIDTH);
+  
+  // 响应窗口大小变化
+  useEffect(() => {
+    // 只有当窗口从大变小时才折叠侧边栏
+    if (checkShouldCollapse()) {
+      setCollapsed(true);
+    }
+  }, [isSmallScreen]); // 依赖isSmallScreen，确保在其变化时执行检查
 
   // 切换侧边栏折叠状态
   const toggleCollapsed = () => {

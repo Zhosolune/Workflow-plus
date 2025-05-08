@@ -681,6 +681,111 @@ const MyComponent = () => {
 };
 ```
 
+### useWindowResizeBreakpoint
+
+**文件位置**: `frontend/src/hooks/useWindowResizeBreakpoint.ts`  
+**功能**: 监听窗口大小变化，返回当前窗口宽度是否小于等于指定断点值
+
+#### 接口定义
+
+```typescript
+function useWindowResizeBreakpoint(breakpoint: number): boolean
+```
+
+#### 参数说明
+
+- `breakpoint`: 断点宽度值（像素）
+
+#### 返回值
+
+- `boolean`: 当前窗口宽度是否小于等于断点值
+
+#### 特点
+
+- 简单直接，仅提供窗口大小与断点的比较结果
+- 实时反映窗口大小变化
+- 自动处理浏览器环境检查和事件监听清理
+
+#### 使用示例
+
+```tsx
+import useWindowResizeBreakpoint from '../../../hooks/useWindowResizeBreakpoint';
+
+const MyComponent = () => {
+  // 获取当前窗口是否小于等于断点值
+  const isSmallScreen = useWindowResizeBreakpoint(940);
+  
+  return (
+    <div>
+      <p>当前窗口是{isSmallScreen ? '小' : '大'}屏幕</p>
+    </div>
+  );
+};
+```
+
+### useWindowSizeTracker
+
+**文件位置**: `frontend/src/hooks/useWindowSizeTracker.ts`  
+**功能**: 跟踪窗口大小变化，特别是从大于断点变为小于等于断点的变化
+
+#### 接口定义
+
+```typescript
+function useWindowSizeTracker(breakpoint: number): {
+  isSmallScreen: boolean;
+  checkShouldCollapse: () => boolean;
+}
+```
+
+#### 参数说明
+
+- `breakpoint`: 断点宽度值（像素）
+
+#### 返回值
+
+- `isSmallScreen`: 当前窗口宽度是否小于等于断点值
+- `checkShouldCollapse`: 检查是否应该触发折叠操作的函数，返回true表示窗口刚刚从大变小
+
+#### 特点
+
+- 将基础的尺寸检测与变化逻辑分开，实现关注点分离
+- 能够检测窗口从大于断点变为小于等于断点的变化
+- 提供"一次性"的变化信号（调用checkShouldCollapse后会重置状态）
+- 自动处理内部状态跟踪，外部组件无需维护额外状态
+
+#### 原理
+
+内部使用两个ref跟踪窗口变化状态：
+- `_wasLargeScreenRef`: 记录窗口之前是否大于断点
+- `_shouldCollapseRef`: 标记是否应该触发折叠操作
+
+#### 使用示例
+
+```tsx
+import useWindowSizeTracker from '../../../hooks/useWindowSizeTracker';
+import { useEffect } from 'react';
+
+const MyComponent = () => {
+  const [collapsed, setCollapsed] = useState(false);
+  const { isSmallScreen, checkShouldCollapse } = useWindowSizeTracker(940);
+  
+  // 响应窗口大小变化
+  useEffect(() => {
+    // 只有当窗口从大变小时才折叠侧边栏
+    if (checkShouldCollapse()) {
+      setCollapsed(true);
+    }
+  }, [isSmallScreen]); // 依赖isSmallScreen，确保在其变化时执行检查
+  
+  return (
+    <div>
+      <Sidebar collapsed={collapsed} />
+      <Content />
+    </div>
+  );
+};
+```
+
 ## 数据类型
 
 ### 工作流相关数据类型
