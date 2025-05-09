@@ -9,7 +9,7 @@ import {
 import SubHeader from '../../layout/SubHeader';
 import SubFooter from '../../layout/SubFooter';
 
-const { Header, Footer, Content } = Layout;
+const {  Content } = Layout;
 
 /**
  * 仪表盘页面

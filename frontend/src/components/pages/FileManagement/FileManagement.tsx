@@ -102,8 +102,7 @@ const FileManagement: React.FC = () => {
   return (
     <Layout className="file-management-page" style={{ height: '100%' }}>
       {/* 顶部操作栏 */}
-      <SubHeader title="文件管理">
-      </SubHeader>
+      <SubHeader title="文件管理"></SubHeader>
 
       <Content
         style={{
