@@ -1,8 +1,11 @@
 import React from 'react';
-import { Tabs, Form, Input, Switch, Select, Button, Card, message } from 'antd';
+import { Tabs, Form, Input, Switch, Select, Button, Card, message, Layout } from 'antd';
 import type { TabsProps } from 'antd';
+import SubHeader from '../../layout/SubHeader';
+import SubFooter from '../../layout/SubFooter';
 
 const { Option } = Select;
+const { Content } = Layout;
 
 /**
  * 系统设置页面
@@ -128,10 +131,24 @@ const SystemSettings: React.FC = () => {
   ];
 
   return (
-    <div className="system-settings-page">
-      <h2>系统设置</h2>
-      <Tabs defaultActiveKey="1" items={items} />
-    </div>
+    <Layout className="system-settings-page" style={{ height: '100%' }}>
+
+      <SubHeader title="系统设置"></SubHeader>
+
+      <Content 
+        style={{ 
+          padding: '20px', 
+          flex: 1,
+          overflow: 'auto',
+        }}>
+        <Tabs defaultActiveKey="1" items={items} />
+      </Content>
+
+      <SubFooter>
+        {/* 添加一些状态栏内容 */}
+        <div style={{ textAlign: 'center' }}>底部状态栏示例</div>
+      </SubFooter>
+    </Layout>
   );
 };
 

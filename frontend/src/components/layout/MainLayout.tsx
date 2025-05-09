@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, ConfigProvider, theme, Flex } from 'antd';
+import { Layout, ConfigProvider, theme } from 'antd';
 import { Outlet } from 'react-router-dom';
 import HeaderComponent from './Header';
 import SiderComponent from './Sider';

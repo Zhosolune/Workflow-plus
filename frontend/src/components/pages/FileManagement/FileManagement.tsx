@@ -1,12 +1,16 @@
 import React from 'react';
-import { Table, Button, Space, Upload, Input, message } from 'antd';
-import { 
-  UploadOutlined, 
+import { Table, Button, Space, Upload, Input, message, Layout, theme } from 'antd';
+import {
+  UploadOutlined,
   FileAddOutlined,
   SearchOutlined,
   DeleteOutlined
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import SubHeader from '../../layout/SubHeader';
+import SubFooter from '../../layout/SubFooter';
+
+const { Content } = Layout;
 
 // 定义文件数据接口
 interface FileData {
@@ -94,38 +98,56 @@ const FileManagement: React.FC = () => {
     message.success('文件上传成功');
   };
 
+
   return (
-    <div className="file-management-page">
-      <h2>文件管理</h2>
-      
-      {/* 操作栏 */}
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<FileAddOutlined />}>新建文件夹</Button>
-        <Upload 
-          name="file" 
-          action="/api/upload" 
-          showUploadList={false}
-          onChange={handleUploadSuccess}
-        >
-          <Button icon={<UploadOutlined />}>上传文件</Button>
-        </Upload>
-        <Input 
-          placeholder="搜索文件" 
-          prefix={<SearchOutlined />} 
-          style={{ width: 200 }} 
+    <Layout className="file-management-page" style={{ height: '100%' }}>
+      {/* 顶部操作栏 */}
+      <SubHeader title="文件管理">
+      </SubHeader>
+
+      <Content
+        style={{
+          padding: '20px',
+          flex: 1,
+          overflow: 'auto',
+        }}>
+        {/* 操作栏 */}
+        <Space style={{ marginBottom: 16 }}>
+          <Button type="primary" icon={<FileAddOutlined />}>新建文件夹</Button>
+          <Upload
+            name="file"
+            action="/api/upload"
+            showUploadList={false}
+            onChange={handleUploadSuccess}
+          >
+            <Button icon={<UploadOutlined />}>上传文件</Button>
+          </Upload>
+          <Input
+            placeholder="搜索文件"
+            prefix={<SearchOutlined />}
+            style={{ width: 200 }}
+          />
+        </Space>
+
+        {/* 文件表格 */}
+        <Table
+          columns={columns}
+          dataSource={fileData}
+          pagination={{ pageSize: 10 }}
+          rowSelection={{
+            type: 'checkbox',
+          }}
         />
-      </Space>
-      
-      {/* 文件表格 */}
-      <Table 
-        columns={columns} 
-        dataSource={fileData} 
-        pagination={{ pageSize: 10 }}
-        rowSelection={{
-          type: 'checkbox',
-        }}
-      />
-    </div>
+
+      </Content>
+
+      {/* 底部状态栏 */}
+      <SubFooter>
+        {/* 添加一些状态栏内容 */}
+        <div style={{ textAlign: 'center' }}>底部状态栏示例</div>
+      </SubFooter>
+
+    </Layout>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Layout, Button, Space, theme } from 'antd';
+import { Layout, Button, Space } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -11,15 +11,16 @@ import Canvas from './Canvas';
 import PropertyPanel from './PropertyPanel';
 import StatusBar from './StatusBar';
 import useResponsiveLayout from '../../../hooks/useResponsiveLayout';
+import SubFooter from '../../layout/SubFooter';
+import SubHeader from '../../layout/SubHeader';
 
-const { Header, Footer, Content } = Layout;
+const { Content } = Layout;
 
 /**
  * 工作流设计器页面
  * 包含顶部操作栏、模块库、画布和属性面板
  */
 const WorkflowDesigner: React.FC = () => {
-  const { token } = theme.useToken();
   // 当前选中的节点
   const [selectedNode, setSelectedNode] = useState<any>(null);
   
@@ -84,56 +85,41 @@ const WorkflowDesigner: React.FC = () => {
     setWorkflowStatus({ ...workflowStatus, ...status });
   };
 
+  // 定义顶部操作按钮
+  const headerActions = (
+    <Space>
+      <Button 
+        type="primary" 
+        icon={<PlusOutlined />} 
+        onClick={handleNew}
+      >
+        新建
+      </Button>
+      <Button icon={<FolderOpenOutlined />} onClick={handleOpen}>
+        打开
+      </Button>
+      <Button icon={<SaveOutlined />} onClick={handleSave}>
+        保存
+      </Button>
+      <Button 
+        type="primary" 
+        icon={<PlayCircleOutlined />} 
+        onClick={handleRun}
+        style={{ background: '#52c41a', borderColor: '#52c41a' }}
+      >
+        运行
+      </Button>
+    </Space>
+  );
+
   return (
     <Layout className="workflow-designer" style={{ height: '100%' }}>
-      {/* 顶部操作栏 */}
-      <Header
-        style={{
-          background: '#fff',
-          padding: '0 20px',
-          boxShadow: `0 2px 8px -3px ${token.colorBorderSecondary}`,
-          height: '60px',
-          lineHeight: '60px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          margin: 0,
-          flexShrink: 0,  //防止 Header 被压缩
-        }}
-      >
-        <div 
-          style={{ 
-            paddingTop: '0px',
-            fontSize: '18px', 
-            color: '#000',
-          }}
-        >
-          <span>模块化工作流设计器</span>
-        </div>
-        <Space>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={handleNew}
-          >
-            新建
-          </Button>
-          <Button icon={<FolderOpenOutlined />} onClick={handleOpen}>
-            打开
-          </Button>
-          <Button icon={<SaveOutlined />} onClick={handleSave}>
-            保存
-          </Button>
-          <Button 
-            type="primary" 
-            icon={<PlayCircleOutlined />} 
-            onClick={handleRun}
-            style={{ background: '#52c41a', borderColor: '#52c41a' }}
-          >
-            运行
-          </Button>
-        </Space>
-      </Header>
+      {/* 顶部操作栏 - 使用SubHeader组件 */}
+      <SubHeader
+        title="模块化工作流设计器"
+        actions={headerActions}
+        height="60px"
+      />
 
       {/* 主内容区 */}
       <Content 
@@ -162,21 +148,10 @@ const WorkflowDesigner: React.FC = () => {
         />
       </Content>
 
-      {/* 底部状态栏 */}
-      <Footer 
-        style={{ 
-          padding: '0 16px', 
-          height: '30px', 
-          lineHeight: '30px', 
-          background: '#f0f2f5', 
-          margin: 0,
-          fontSize: '14px',
-          borderTop: '1px solid #e8e8e8',
-          flexShrink: 0
-        }}
-      >
+      {/* 底部状态栏 - 使用SubFooter组件 */}
+      <SubFooter>
         <StatusBar status={workflowStatus} />
-      </Footer>
+      </SubFooter>
     </Layout>
   );
 };
