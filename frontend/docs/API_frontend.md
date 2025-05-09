@@ -9,14 +9,22 @@
   - [MainLayout](#mainlayout)
   - [Header](#header)
   - [Sider](#sider)
+  - [SubHeader](#subheader)
+  - [SubFooter](#subfooter)
 - [工作流设计器](#工作流设计器)
   - [WorkflowDesigner](#workflowdesigner)
   - [Canvas](#canvas)
   - [ModuleLibrary](#modulelibrary)
   - [PropertyPanel](#propertypanel)
   - [StatusBar](#statusbar)
+  - [ResizeHandle](#resizehandle)
 - [功能组件](#功能组件)
 - [自定义Hooks](#自定义Hooks)
+  - [useResize](#useresize)
+  - [useResponsiveLayout](#useresponsivelayout)
+  - [useWindowResizeBreakpoint](#usewindowresizebreakpoint)
+  - [useWindowSizeTracker](#usewindowsizetracker)
+  - [useThemeFooterColors](#usethemefootercolors)
 - [数据类型](#数据类型)
 - [工具函数](#工具函数)
 - [命名规范](#命名规范)
@@ -197,6 +205,92 @@ const handleMenuClick = (key: string) => {
   collapsed={collapsed} 
   onCollapse={toggleCollapsed} 
 />
+```
+
+### SubHeader
+
+**文件位置**: `frontend/src/components/layout/SubHeader.tsx`  
+**功能**: 自适应主题的子界面Header组件，在亮色/暗色主题下自动使用对应的颜色
+
+#### Props接口
+
+```typescript
+interface SubHeaderProps {
+  height?: string | number;      // 头部栏的高度，默认为'60px'
+  padding?: string;              // 头部栏的内边距，默认为'0 20px'
+  title?: React.ReactNode;       // 头部栏的标题
+  actions?: React.ReactNode;     // 头部栏右侧的操作区域
+  style?: React.CSSProperties;   // 头部栏的自定义样式
+}
+```
+
+#### 状态管理
+
+通过Ant Design的theme hook获取当前主题配置：
+```typescript
+const { token } = theme.useToken();
+```
+
+#### 主要特性
+
+- 自动适应当前主题，使用恰当的背景色和阴影效果
+- 响应式布局，自动分隔标题和操作区
+- 可自定义高度、内边距和样式
+- 支持复杂的标题和操作区内容
+
+#### 使用示例
+
+```tsx
+<SubHeader
+  title="模块化工作流设计器"
+  actions={
+    <Space>
+      <Button type="primary" icon={<PlusOutlined />}>新建</Button>
+      <Button icon={<SaveOutlined />}>保存</Button>
+    </Space>
+  }
+  height="60px"
+/>
+```
+
+### SubFooter
+
+**文件位置**: `frontend/src/components/layout/SubFooter.tsx`  
+**功能**: 自适应主题的子界面Footer组件，在亮色/暗色主题下自动切换颜色
+
+#### Props接口
+
+```typescript
+interface SubFooterProps {
+  bgColor?: string;              // 亮色主题下的背景色，默认为'#f0f2f5'
+  borderColor?: string;          // 亮色主题下的边框色，默认为'#e8e8e8'
+  height?: string | number;      // 底部栏的高度，默认为'30px'
+  padding?: string;              // 底部栏的内边距，默认为'0 16px'
+  style?: React.CSSProperties;   // 底部栏的自定义样式
+  children?: React.ReactNode;    // 底部栏的内容
+}
+```
+
+#### 状态管理
+
+通过自定义的useThemeFooterColors hook管理在不同主题下的颜色：
+```typescript
+const { footerBgColor, footerBorderColor } = useThemeFooterColors(bgColor, borderColor);
+```
+
+#### 主要特性
+
+- 自动根据当前主题调整背景色和边框色
+- 可定制高度和内边距
+- 支持添加任意内容的子元素
+- 响应式设计，适应不同屏幕尺寸
+
+#### 使用示例
+
+```tsx
+<SubFooter height="30px">
+  <StatusBar status={workflowStatus} />
+</SubFooter>
 ```
 
 ## 工作流设计器
@@ -542,6 +636,67 @@ interface StatusBarProps {
 <StatusBar status={workflowStatus} />
 ```
 
+### ResizeHandle
+
+**文件位置**: `frontend/src/components/pages/WorkflowDesigner/ResizeHandle.tsx`  
+**功能**: 拖拽手柄组件，用于调整相邻卡片的宽度
+
+#### Props接口
+
+```typescript
+interface ResizeHandleProps {
+  position: 'left' | 'right';        // 手柄位置
+  width: number;                     // 当前宽度
+  onResize: (newWidth: number) => void;  // 调整大小回调，直接传递新宽度
+  minWidth?: number;                 // 最小宽度
+  maxWidth?: number;                 // 最大宽度
+}
+```
+
+#### 状态管理
+
+通过自定义的useResize hook处理拖拽逻辑:
+
+```typescript
+const {
+  isDragging,
+  isHovering,
+  handleMouseDown,
+  handleMouseEnter,
+  handleMouseLeave,
+} = useResize(width, onResize, minWidth, maxWidth);
+```
+
+#### 视觉反馈
+
+根据状态动态设置手柄颜色:
+- 拖拽时为蓝色 (#3F75FB)
+- 悬停时为蓝色 (#3F75FB)
+- 默认为灰色 (#bfbfbf)
+
+#### 主要方法
+
+```typescript
+// 根据状态确定手柄颜色
+const getBarColor = () => {
+  if (isDragging) return '#3F75FB'; // 拖拽时为蓝色
+  if (isHovering) return '#3F75FB'; // 悬停时为蓝色
+  return '#bfbfbf';                 // 默认为灰色
+};
+```
+
+#### 使用示例
+
+```tsx
+<ResizeHandle 
+  position="right" 
+  width={moduleLibraryWidth} 
+  onResize={handleModuleLibraryResize} 
+  minWidth={200}
+  maxWidth={400}
+/>
+```
+
 ## 功能组件
 
 ## 自定义Hooks
@@ -786,6 +941,82 @@ const MyComponent = () => {
 };
 ```
 
+### useThemeFooterColors
+
+**文件位置**: `frontend/src/hooks/useThemeFooterColors.ts`  
+**功能**: 根据当前主题计算Footer的背景色和边框色，支持SubFooter组件的主题适配功能
+
+#### 接口定义
+
+```typescript
+function useThemeFooterColors(
+  footerBgLightMode?: string,
+  footerBorderLightMode?: string
+): {
+  footerBgColor: string;
+  footerBorderColor: string;
+  isDarkMode: boolean;
+}
+```
+
+#### 参数说明
+
+- `footerBgLightMode`: 亮色主题下的背景色，默认值为'#f0f2f5'
+- `footerBorderLightMode`: 亮色主题下的边框色，默认值为'#e8e8e8'
+
+#### 返回值
+
+- `footerBgColor`: 当前主题下的背景色
+- `footerBorderColor`: 当前主题下的边框色
+- `isDarkMode`: 当前是否为暗色主题
+
+#### 实现原理
+
+使用Ant Design的theme.useToken()获取当前主题的token，通过分析colorBgBase来判断当前是亮色还是暗色主题：
+
+```typescript
+const isDarkMode = useMemo(() => {
+  // 通过token中的颜色判断当前主题模式
+  return token.colorBgBase !== '#fff';
+}, [token.colorBgBase]);
+```
+
+然后根据主题类型返回对应的颜色：
+
+```typescript
+// 根据当前主题计算footer的背景色
+const footerBgColor = useMemo(() => {
+  return isDarkMode 
+    ? '#1d1d1d'  // 暗色主题下的颜色
+    : footerBgLightMode; // 亮色主题下使用指定的颜色
+}, [isDarkMode, footerBgLightMode]);
+```
+
+#### 使用示例
+
+```tsx
+import useThemeFooterColors from '../../../hooks/useThemeFooterColors';
+
+const MyFooter = () => {
+  // 使用默认颜色
+  const { footerBgColor, footerBorderColor, isDarkMode } = useThemeFooterColors();
+  
+  // 或者指定亮色主题下的颜色
+  // const { footerBgColor, footerBorderColor } = useThemeFooterColors('#f5f5f5', '#e0e0e0');
+  
+  return (
+    <div
+      style={{
+        background: footerBgColor,
+        borderTop: `1px solid ${footerBorderColor}`,
+      }}
+    >
+      页脚内容
+    </div>
+  );
+};
+```
+
 ## 数据类型
 
 ### 工作流相关数据类型
@@ -872,5 +1103,5 @@ const deserializeWorkflow = (json: string): { nodes: Node[], edges: Edge[] } => 
 
 ## 版本记录
 
-**当前版本**: 0.1.1
-**最近更新**: 2025-04-29 
+**当前版本**: 0.1.2
+**最近更新**: 2025-05-09 
