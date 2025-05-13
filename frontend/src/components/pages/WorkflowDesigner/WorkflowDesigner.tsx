@@ -38,6 +38,7 @@ const WorkflowDesigner: React.FC = () => {
   const {
     moduleLibraryWidth,
     propertyPanelWidth,
+    contentWidth, // 新增：获取 contentWidth
     handleModuleLibraryResize,
     handlePropertyPanelResize
   } = useResponsiveLayout(contentRef);
@@ -132,8 +133,9 @@ const WorkflowDesigner: React.FC = () => {
         <Canvas
           onNodeSelect={handleNodeSelect}
           updateWorkflowStatus={updateWorkflowStatus}
-          moduleLibraryWidth={moduleLibraryWidth} // 新增
-          propertyPanelWidth={propertyPanelWidth} // 新增
+          moduleLibraryWidth={moduleLibraryWidth} 
+          propertyPanelWidth={propertyPanelWidth} 
+          contentWidth={contentWidth} // 新增：传递 contentWidth
         />
 
         {/* 模块库 */}

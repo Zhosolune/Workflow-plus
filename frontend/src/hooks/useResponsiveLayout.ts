@@ -225,6 +225,7 @@ export const useResponsiveLayout = (contentRef: React.RefObject<HTMLDivElement>)
   return {
     moduleLibraryWidth: _moduleLibraryWidth,
     propertyPanelWidth: _propertyPanelWidth,
+    contentWidth: _contentWidth, // 新增：返回内容区域宽度
     handleModuleLibraryResize,
     handlePropertyPanelResize,
     constants: {
@@ -235,4 +236,4 @@ export const useResponsiveLayout = (contentRef: React.RefObject<HTMLDivElement>)
   };
 };
 
-export default useResponsiveLayout; 
+export default useResponsiveLayout;
