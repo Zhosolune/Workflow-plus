@@ -3,60 +3,18 @@ import { Card, Input, Collapse, List, Typography } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useDraggable } from '@dnd-kit/core';
 import ResizeHandle from './ResizeHandle';
+import { 
+  MODULE_CATEGORIES, 
+  MODULE_DEFINITIONS, 
+  getModulesByCategory,
+  ModuleDefinition
+} from '../../../models/moduleDefinitions';
 
 const { Panel } = Collapse;
 const { Search } = Input;
 
-// 模块分类和模块数据
-const moduleCategories = [
-  {
-    key: 'data-source',
-    title: '数据源',
-    modules: [
-      { id: 'csv-file', name: 'CSV文件读取', icon: '📄', type: 'source' },
-      { id: 'database', name: '数据库连接', icon: '🗃️', type: 'source' },
-      { id: 'input', name: '图像输入', icon: '🖼️', type: 'source' },
-    ],
-  },
-  {
-    key: 'data-processing',
-    title: '数据处理',
-    modules: [
-      { id: 'data-cut', name: '数据切片', icon: '✂️', type: 'processor' },
-      { id: 'data-filter', name: '数据过滤', icon: '🔍', type: 'processor' },
-      { id: 'data-transform', name: '数据转换', icon: '🔄', type: 'processor' },
-    ],
-  },
-  {
-    key: 'analysis-tools',
-    title: '分析工具',
-    modules: [
-      { id: 'kmeans', name: 'K-Means聚类', icon: '📊', type: 'analyzer' },
-      { id: 'correlation', name: '相关分析', icon: '📈', type: 'analyzer' },
-      { id: 'pca', name: 'PCA降维', icon: '📉', type: 'analyzer' },
-    ],
-  },
-  {
-    key: 'visualization',
-    title: '可视化',
-    modules: [
-      { id: 'scatter-plot', name: '散点图', icon: '📍', type: 'viz' },
-      { id: 'bar-chart', name: '柱状图', icon: '📊', type: 'viz' },
-      { id: 'line-chart', name: '折线图', icon: '📈', type: 'viz' },
-    ],
-  },
-  {
-    key: 'output',
-    title: '输出',
-    modules: [
-      { id: 'result-save', name: '结果保存', icon: '💾', type: 'output' },
-      { id: 'report', name: '报告生成', icon: '📃', type: 'output' },
-    ],
-  },
-];
-
 // 可拖拽模块组件
-const DraggableModule = ({ module }: { module: any }) => {
+const DraggableModule = ({ module }: { module: ModuleDefinition }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: module.id,
     data: module,
@@ -106,7 +64,8 @@ const ModuleLibrary: React.FC<ModuleLibraryProps> = ({ width, onResize }) => {
   };
   
   // 过滤模块
-  const getFilteredModules = (modules: any[]) => {
+  const getFilteredModules = (categoryKey: string) => {
+    const modules = getModulesByCategory(categoryKey);
     if (!searchValue) return modules;
     return modules.filter(module => 
       module.name.toLowerCase().includes(searchValue.toLowerCase())
@@ -153,8 +112,8 @@ const ModuleLibrary: React.FC<ModuleLibraryProps> = ({ width, onResize }) => {
         
         {/* 使用老式API方式渲染Collapse组件以避免类型问题 */}
         <Collapse defaultActiveKey={['data-source']} ghost>
-          {moduleCategories.map((category) => {
-            const filteredModules = getFilteredModules(category.modules);
+          {MODULE_CATEGORIES.map((category) => {
+            const filteredModules = getFilteredModules(category.key);
             
             // 如果搜索后没有匹配的模块，则不显示此分类
             if (searchValue && filteredModules.length === 0) {

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Card, Form, Input, InputNumber, Select, Switch, Typography, Empty } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Form, Input, InputNumber, Select, Switch, Typography, Empty, ColorPicker } from 'antd';
 import ResizeHandle from './ResizeHandle';
+import { getModuleById, PropertyType, ModulePropertyDefinition } from '../../../models/moduleDefinitions';
 
 const { Option } = Select;
 
@@ -18,6 +19,20 @@ interface PropertyPanelProps {
 const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onResize }) => {
   // 卡片位置状态
   const [rightPosition] = useState(10);
+  // 表单实例
+  const [form] = Form.useForm();
+  
+  // 当选中节点变化时，重置表单
+  useEffect(() => {
+    if (selectedNode) {
+      form.resetFields();
+      form.setFieldsValue({
+        name: selectedNode.name || '',
+        description: selectedNode.description || '',
+        ...selectedNode.properties,
+      });
+    }
+  }, [selectedNode, form]);
   
   // 处理表单值变更
   const handleValueChange = (changedValues: any) => {
@@ -25,7 +40,51 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
     // 在实际应用中，这里会更新节点属性
   };
   
-  // 根据节点类型渲染不同的属性表单
+  // 根据属性类型渲染表单项
+  const renderFormItem = (property: ModulePropertyDefinition) => {
+    switch (property.type) {
+      case PropertyType.STRING:
+        return <Input placeholder={`请输入${property.name}`} />;
+      
+      case PropertyType.NUMBER:
+        return (
+          <InputNumber 
+            min={property.min} 
+            max={property.max} 
+            placeholder={`请输入${property.name}`} 
+            style={{ width: '100%' }}
+          />
+        );
+      
+      case PropertyType.BOOLEAN:
+        return <Switch />;
+      
+      case PropertyType.SELECT:
+        return (
+          <Select placeholder={`请选择${property.name}`}>
+            {property.options?.map(option => (
+              <Option key={option.value} value={option.value}>
+                {option.label}
+              </Option>
+            ))}
+          </Select>
+        );
+      
+      case PropertyType.FILE:
+        return <Input placeholder="请选择文件路径" />;
+      
+      case PropertyType.COLOR:
+        return <ColorPicker />;
+      
+      case PropertyType.TEXT:
+        return <Input.TextArea rows={4} placeholder={`请输入${property.name}`} />;
+      
+      default:
+        return <Input placeholder={`请输入${property.name}`} />;
+    }
+  };
+  
+  // 渲染属性表单
   const renderPropertyForm = () => {
     if (!selectedNode) {
       return (
@@ -36,86 +95,25 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
       );
     }
     
-    // 根据节点类型显示不同的属性表单
-    switch (selectedNode.type) {
-      case 'analyzer':
-        if (selectedNode.id === 'kmeans') {
-          return renderKMeansForm();
-        }
-        return renderGenericForm();
-      case 'source':
-      case 'processor':
-      case 'viz':
-      case 'output':
-      default:
-        return renderGenericForm();
+    // 获取模块定义
+    const moduleDefinition = getModuleById(selectedNode.id);
+    
+    if (!moduleDefinition) {
+      return (
+        <Empty 
+          description="未找到模块定义" 
+          image={Empty.PRESENTED_IMAGE_SIMPLE} 
+        />
+      );
     }
-  };
-  
-  // 渲染K-Means模块的属性表单
-  const renderKMeansForm = () => {
+    
     return (
       <Form
+        form={form}
         layout="vertical"
         initialValues={{
-          k: 3,
-          maxIterations: 100,
-          seed: 42,
-          initMethod: 'kmeans++',
-          preprocessing: 'standardization',
-          distanceFunction: 'euclidean',
-        }}
-        onValuesChange={handleValueChange}
-      >
-        <Typography.Title level={5}>聚类参数</Typography.Title>
-        
-        <Form.Item label="聚类数量(k值)" name="k">
-          <InputNumber min={1} max={100} />
-        </Form.Item>
-        
-        <Form.Item label="最大迭代次数" name="maxIterations">
-          <InputNumber min={10} max={1000} />
-        </Form.Item>
-        
-        <Form.Item label="随机种子" name="seed">
-          <InputNumber />
-        </Form.Item>
-        
-        <Form.Item label="初始化方法" name="initMethod">
-          <Select>
-            <Option value="kmeans++">K-means++</Option>
-            <Option value="random">随机初始化</Option>
-          </Select>
-        </Form.Item>
-        
-        <Form.Item label="预处理方式" name="preprocessing">
-          <Select>
-            <Option value="standardization">标准化</Option>
-            <Option value="normalization">归一化</Option>
-            <Option value="none">无</Option>
-          </Select>
-        </Form.Item>
-        
-        <Form.Item label="距离函数" name="distanceFunction">
-          <Select>
-            <Option value="euclidean">欧氏距离</Option>
-            <Option value="manhattan">曼哈顿距离</Option>
-            <Option value="cosine">余弦距离</Option>
-          </Select>
-        </Form.Item>
-      </Form>
-    );
-  };
-  
-  // 渲染通用属性表单
-  const renderGenericForm = () => {
-    return (
-      <Form
-        layout="vertical"
-        initialValues={{
-          name: selectedNode?.name || '',
-          description: '',
-          enabled: true,
+          name: selectedNode.name || '',
+          description: selectedNode.description || '',
         }}
         onValuesChange={handleValueChange}
       >
@@ -129,26 +127,21 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
           <Input.TextArea rows={2} />
         </Form.Item>
         
-        <Form.Item label="启用" name="enabled" valuePropName="checked">
-          <Switch />
-        </Form.Item>
-        
-        {/* 根据节点类型动态添加更多属性 */}
-        {selectedNode && selectedNode.type === 'source' && (
+        {moduleDefinition.properties.length > 0 && (
           <>
-            <Typography.Title level={5}>数据源配置</Typography.Title>
-            <Form.Item label="路径" name="path">
-              <Input />
-            </Form.Item>
-          </>
-        )}
-        
-        {selectedNode && selectedNode.type === 'processor' && (
-          <>
-            <Typography.Title level={5}>处理参数</Typography.Title>
-            <Form.Item label="批处理大小" name="batchSize">
-              <InputNumber min={1} />
-            </Form.Item>
+            <Typography.Title level={5}>模块属性</Typography.Title>
+            
+            {moduleDefinition.properties.map(property => (
+              <Form.Item 
+                key={property.id} 
+                label={property.name} 
+                name={property.id}
+                rules={[{ required: property.required, message: `请${property.type === PropertyType.SELECT ? '选择' : '输入'}${property.name}` }]}
+                tooltip={property.description}
+              >
+                {renderFormItem(property)}
+              </Form.Item>
+            ))}
           </>
         )}
       </Form>
@@ -187,12 +180,12 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
         {renderPropertyForm()}
       </Card>
       
-      {/* 添加拖拽手柄，调整位置到Card左侧边缘 */}
-      <ResizeHandle 
-        position="left" 
+      {/* 添加拖拽手柄，位置调整到Card左侧边缘 */}
+      <ResizeHandle
+        position="left"
         width={width}
         onResize={onResize}
-        minWidth={200}
+        minWidth={250}
         maxWidth={600}
       />
     </div>
