@@ -14,6 +14,7 @@ import {
   OnConnect,
   ConnectionLineType,
   Position,
+  MiniMap,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { DndContext } from '@dnd-kit/core';
@@ -30,13 +31,20 @@ const nodeTypesProp: NodeTypes = {};
 interface CanvasProps {
   onNodeSelect: (node: any) => void;
   updateWorkflowStatus: (status: any) => void;
+  moduleLibraryWidth: number; // 新增
+  propertyPanelWidth: number; // 新增
 }
 
 /**
  * 工作流画布组件
  * 使用React Flow实现节点拖拽和连接
  */
-const Canvas: React.FC<CanvasProps> = ({ onNodeSelect, updateWorkflowStatus }) => {
+const Canvas: React.FC<CanvasProps> = ({ 
+  onNodeSelect, 
+  updateWorkflowStatus,
+  moduleLibraryWidth,    // 新增
+  propertyPanelWidth     // 新增
+}) => {
   // 节点和连线状态管理
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -162,7 +170,18 @@ const Canvas: React.FC<CanvasProps> = ({ onNodeSelect, updateWorkflowStatus }) =
             size={1} 
             color="#888" 
           />
-          <Controls />
+          {/* 将Controls移到左下角，避免被模块库和属性面板遮挡 */}
+          <Controls 
+            position="bottom-left" 
+            style={{ left: moduleLibraryWidth + 20, bottom: 20 }} // 修改
+          />
+          {/* 添加缩略图，放置在属性面板左侧 */}
+          <MiniMap 
+            position="bottom-right"
+            style={{ right: propertyPanelWidth + 20, bottom: 20 }} // 修改
+            zoomable
+            pannable
+          />
         </ReactFlow>
       </div>
     </DndContext>

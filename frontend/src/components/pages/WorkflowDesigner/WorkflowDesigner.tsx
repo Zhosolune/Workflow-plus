@@ -132,6 +132,8 @@ const WorkflowDesigner: React.FC = () => {
         <Canvas
           onNodeSelect={handleNodeSelect}
           updateWorkflowStatus={updateWorkflowStatus}
+          moduleLibraryWidth={moduleLibraryWidth} // 新增
+          propertyPanelWidth={propertyPanelWidth} // 新增
         />
 
         {/* 模块库 */}
@@ -156,4 +158,4 @@ const WorkflowDesigner: React.FC = () => {
   );
 };
 
-export default WorkflowDesigner; 
+export default WorkflowDesigner;
