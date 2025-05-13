@@ -1,7 +1,11 @@
 import React from 'react';
-import { Tabs, Form, Input, Button, Upload, Avatar, Card, Descriptions, message } from 'antd';
+import { Tabs, Form, Input, Button, Upload, Avatar, Card, Descriptions, message, Layout } from 'antd';
 import { UserOutlined, UploadOutlined, LockOutlined } from '@ant-design/icons';
 import type { TabsProps } from 'antd';
+import SubHeader from '../../layout/SubHeader';
+import SubFooter from '../../layout/SubFooter';
+
+const { Content } = Layout;
 
 /**
  * 个人中心页面
@@ -133,10 +137,24 @@ const UserCenter: React.FC = () => {
   ];
 
   return (
-    <div className="user-center-page">
-      <h2>个人中心</h2>
-      <Tabs defaultActiveKey="1" items={items} />
-    </div>
+    <Layout className="user-center-page" style={{ height: '100%' }}>
+
+      <SubHeader title="个人中心"></SubHeader>
+
+      <Content 
+        style={{ 
+          padding: '20px', 
+          flex: 1,
+          overflow: 'auto',
+        }}>
+        <Tabs defaultActiveKey="1" items={items} />
+      </Content>
+      
+      <SubFooter>
+        {/* 添加一些状态栏内容 */}
+        <div style={{ textAlign: 'center' }}>底部状态栏示例</div>
+      </SubFooter>
+    </Layout>
   );
 };
 

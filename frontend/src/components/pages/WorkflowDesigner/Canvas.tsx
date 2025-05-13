@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react'; //确保 useState 和 useEffect 已导入
 import {
   ReactFlow,
   BackgroundVariant,
@@ -14,6 +14,7 @@ import {
   OnConnect,
   ConnectionLineType,
   Position,
+  MiniMap,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { DndContext } from '@dnd-kit/core';
@@ -30,13 +31,22 @@ const nodeTypesProp: NodeTypes = {};
 interface CanvasProps {
   onNodeSelect: (node: any) => void;
   updateWorkflowStatus: (status: any) => void;
+  moduleLibraryWidth: number; 
+  propertyPanelWidth: number; 
+  contentWidth: number; // 新增：接收 contentWidth
 }
 
 /**
  * 工作流画布组件
  * 使用React Flow实现节点拖拽和连接
  */
-const Canvas: React.FC<CanvasProps> = ({ onNodeSelect, updateWorkflowStatus }) => {
+const Canvas: React.FC<CanvasProps> = ({ 
+  onNodeSelect, 
+  updateWorkflowStatus,
+  moduleLibraryWidth,    
+  propertyPanelWidth,    
+  contentWidth          // 新增
+}) => {
   // 节点和连线状态管理
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -44,6 +54,9 @@ const Canvas: React.FC<CanvasProps> = ({ onNodeSelect, updateWorkflowStatus }) =
   // 节点计数器（用于生成唯一ID）
   const [nodeIdCounter, setNodeIdCounter] = useState(1);
   
+  // 新增：控制 Controls 和 MiniMap 的显示状态
+  const [showUiElements, setShowUiElements] = useState(true);
+
   // 使用useMemo缓存nodeTypes
   const nodeTypes = useMemo(() => nodeTypesProp, []);
   
@@ -83,7 +96,30 @@ const Canvas: React.FC<CanvasProps> = ({ onNodeSelect, updateWorkflowStatus }) =
       });
     }
   }, [nodes.length, edges.length, updateWorkflowStatus]);
-  
+
+  // 新增：根据可用空间判断是否显示 Controls 和 MiniMap
+  useEffect(() => {
+    if (contentWidth > 0 && moduleLibraryWidth > 0 && propertyPanelWidth > 0) {
+      // 计算 Controls 和 MiniMap 左侧和右侧的可用空间
+      // Controls 左侧需要 moduleLibraryWidth + 20px
+      // MiniMap 右侧需要 propertyPanelWidth + 20px
+      // 它们自身也需要宽度：Controls ~54px, MiniMap ~200px
+      // 还需要它们之间有一定的间隙，例如 50px
+      const reservedSpaceForPanelsAndOffsets = moduleLibraryWidth + propertyPanelWidth;
+      const minSpaceForControlsAndMinimap = 54 + 200 + 40 + 50; // ControlsWidth + MiniMapWidth + Offsets (20*2) + MinGap
+      
+      const availableCentralSpace = contentWidth - reservedSpaceForPanelsAndOffsets;
+      
+      // 阈值可以根据实际视觉效果调整
+      const HIDE_UI_THRESHOLD = minSpaceForControlsAndMinimap; 
+      
+      setShowUiElements(availableCentralSpace >= HIDE_UI_THRESHOLD);
+    } else if (contentWidth === 0) {
+      // 初始加载时 contentWidth 可能为0，默认显示
+      setShowUiElements(true);
+    }
+  }, [contentWidth, moduleLibraryWidth, propertyPanelWidth]);
+
   // 拖拽放置处理
   const { setNodeRef } = useDroppable({
     id: 'canvas-drop-area',
@@ -162,7 +198,22 @@ const Canvas: React.FC<CanvasProps> = ({ onNodeSelect, updateWorkflowStatus }) =
             size={1} 
             color="#888" 
           />
-          <Controls />
+          {/* 根据 showUiElements 状态条件渲染 Controls */}
+          {showUiElements && (
+            <Controls 
+              position="bottom-left" 
+              style={{ left: moduleLibraryWidth + 20, bottom: 20 }} 
+            />
+          )}
+          {/* 根据 showUiElements 状态条件渲染 MiniMap */}
+          {showUiElements && (
+            <MiniMap 
+              position="bottom-right"
+              style={{ right: propertyPanelWidth + 20, bottom: 20 }} 
+              zoomable
+              pannable
+            />
+          )}
         </ReactFlow>
       </div>
     </DndContext>

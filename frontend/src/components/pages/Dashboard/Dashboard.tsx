@@ -1,41 +1,26 @@
 import React from 'react';
-import { Card, Row, Col, Layout, Statistic, Space, theme } from 'antd';
+import { Card, Row, Col, Layout, Statistic, theme } from 'antd';
 import {
   AppstoreOutlined,
   FileOutlined,
   CheckCircleOutlined,
   SyncOutlined,
 } from '@ant-design/icons';
+import SubHeader from '../../layout/SubHeader';
+import SubFooter from '../../layout/SubFooter';
 
-const { Header, Footer, Content } = Layout;
+const {  Content } = Layout;
 
 /**
  * 仪表盘页面
  * 显示系统概览信息
  */
 const Dashboard: React.FC = () => {
-  const { token } = theme.useToken();
   return (
     <Layout className="dashboard-page" style={{ height: '100%' }}>
       {/* 顶部操作栏 */}
-      <Header
-        style={{
-          background: '#fff',
-          padding: '0 20px',
-          boxShadow: `0 2px 8px -3px ${token.colorBorderSecondary}`,
-          height: '60px',
-          lineHeight: '60px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          margin: 0,
-          flexShrink: 0,  //防止 Header 被压缩
-        }}
-      >
-        <div style={{ fontSize: '18px' }}>
-          <span>仪表盘</span>
-        </div>
-      </Header>
+      <SubHeader title="仪表盘">
+      </SubHeader>
 
       <Content 
         style={{ 
@@ -121,21 +106,10 @@ const Dashboard: React.FC = () => {
       </Content>
 
       {/* 底部状态栏 */}
-      <Footer 
-        style={{ 
-          padding: '0 16px', 
-          height: '30px', 
-          lineHeight: '30px', 
-          background: '#f0f2f5', 
-          margin: 0,
-          fontSize: '14px',
-          borderTop: '1px solid #e8e8e8',
-          flexShrink: 0
-        }}
-      >
+      <SubFooter>
         {/* 添加一些状态栏内容 */}
         <div style={{ textAlign: 'center' }}>底部状态栏示例</div>
-      </Footer>
+      </SubFooter>
 
     </Layout>
   );
