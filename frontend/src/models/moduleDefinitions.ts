@@ -23,6 +23,25 @@ export enum PropertyType {
   TEXT = 'text'
 }
 
+// 新增：前端 PortDefinition 接口
+export interface PortDefinitionFE {
+  name: string;
+  port_io_type: 'input' | 'output';
+  data_type: string;
+  description: string;
+  is_optional: boolean;
+  default_enabled: boolean;
+  allow_multiple_connections: boolean;
+}
+
+// 新增：前端 VariantDefinition 接口
+export interface VariantDefinitionFE {
+  variant_id: string;
+  variant_name: string;
+  description: string;
+  port_definitions: PortDefinitionFE[];
+}
+
 // 模块属性定义接口
 export interface ModulePropertyDefinition {
   id: string;

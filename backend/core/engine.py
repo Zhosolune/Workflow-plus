@@ -257,95 +257,76 @@ class WorkflowEngine:
             self._execute_workflow()
             return True
     
-    def _get_source_data(self, workflow: Workflow, target_module_id: str, target_port_id: str) -> Any:
+    def _get_source_data(self, workflow: Workflow, target_module_id: str, target_port_name: str) -> Any:
         """
-        获取目标端口的数据源
+        获取目标端口的数据源 (基于端口名称)
         
         Args:
             workflow: 工作流实例
             target_module_id: 目标模块ID
-            target_port_id: 目标端口ID
+            target_port_name: 目标端口的名称
             
         Returns:
             数据源或None
         """
-        # 获取模块和端口名称，用于日志记录
-        target_module_name = workflow._modules[target_module_id].name if target_module_id in workflow._modules else "未知模块"
-        target_port_name = "未知端口"
-        for port_id, port in workflow._modules[target_module_id].input_ports.items():
-            if port_id == target_port_id:
-                target_port_name = port.name
-                break
-                
-        glogger.info(f"获取连接数据 - 目标: {target_module_name}.{target_port_name} (ID: {target_port_id})")
+        target_module = workflow.modules.get(target_module_id)
+        if not target_module:
+            glogger.warning(f"获取连接数据失败：未找到目标模块ID {target_module_id}")
+            return None
+
+        # glogger.info(f"获取连接数据 - 目标: {target_module.name}.{target_port_name}")
         
-        # 查找连接到此输入端口的所有连接
         found_connections = []
-        for conn_id, conn in workflow._connections.items():
-            if conn.target_module_id == target_module_id and conn.target_port_id == target_port_id:
+        for conn in workflow.connections.values():
+            if conn.target_module_id == target_module_id and conn.target_port_name == target_port_name:
                 found_connections.append(conn)
                 
         if not found_connections:
-            glogger.info(f"  - 未找到连接到 {target_module_name}.{target_port_name} 的连接")
-            return None
+            # glogger.info(f"  - 未找到连接到 {target_module.name}.{target_port_name} 的连接")
+            return None # 或者根据端口是否可选返回默认值
             
-        # 遍历所有连接，查找数据
+        # 通常输入端口只应该有一个连接（除非允许多重连接，这里简化处理，取第一个有效连接）
+        # TODO: 如果 target_port 允许多重连接，这里的逻辑需要调整为收集所有源数据
         for conn in found_connections:
-            # 找到连接，获取源模块和源端口
             source_module_id = conn.source_module_id
-            source_port_id = conn.source_port_id
+            source_port_name = conn.source_port_name # 使用端口名称
             
-            source_module_name = workflow._modules[source_module_id].name if source_module_id in workflow._modules else "未知模块"
-            source_port_name = "未知端口"
-            for port_id, port in workflow._modules[source_module_id].output_ports.items():
-                if port_id == source_port_id:
-                    source_port_name = port.name
-                    break
-                    
-            glogger.info(f"  - 找到连接: {source_module_name}.{source_port_name} -> {target_module_name}.{target_port_name}")
+            source_module = workflow.modules.get(source_module_id)
+            if not source_module:
+                glogger.warning(f"  - 连接中指定的源模块ID {source_module_id} 未在工作流中找到。")
+                continue
             
-            # 检查源模块是否已执行并有输出数据
+            # glogger.info(f"  - 找到连接: {source_module.name}.{source_port_name} -> {target_module.name}.{target_port_name}")
+            
             if source_module_id in self._execution_results:
-                source_outputs = self._execution_results[source_module_id]
-                glogger.info(f"  - 源模块 {source_module_name} 的输出数据: {source_outputs}")
+                source_module_outputs = self._execution_results[source_module_id]
+                # glogger.info(f"  - 源模块 '{source_module.name}' 的原始输出数据: {source_module_outputs}")
                 
-                # 特殊处理条件判断模块的输出
-                if "true_result" in source_outputs and "false_result" in source_outputs:
-                    # 获取源模块的端口名称
-                    if source_port_name == "true_result":
-                        glogger.info(f"  - 获取条件判断true_result输出: {source_outputs['true_result']}")
-                        return source_outputs['true_result']
-                    elif source_port_name == "false_result":
-                        glogger.info(f"  - 获取条件判断false_result输出: {source_outputs['false_result']}")
-                        return source_outputs['false_result']
-                    # 如果不是特定的端口名，返回整个条件判断输出
-                    else:
-                        glogger.info(f"  - 获取整个条件判断输出: {source_outputs}")
-                        return source_outputs
-                
-                # 直接处理常规端口输出
-                if source_port_id in source_outputs:
-                    # 直接返回该端口的输出值
-                    glogger.info(f"  - 获取端口特定输出: {source_outputs[source_port_id]}")
-                    return source_outputs[source_port_id]
-                
-                # 处理字典中包含端口名称的情况
-                if source_port_name in source_outputs:
-                    glogger.info(f"  - 按端口名称获取输出: {source_outputs[source_port_name]}")
-                    return source_outputs[source_port_name]
-                
-                # 如果只有一个输出，直接返回
-                if isinstance(source_outputs, dict) and len(source_outputs) == 1:
-                    output_value = next(iter(source_outputs.values()))
-                    glogger.info(f"  - 单一输出值: {output_value}")
-                    return output_value
-                
-                # 默认情况，返回整个输出数据
-                glogger.info(f"  - 返回整个输出数据: {source_outputs}")
-                return source_outputs
+                # 检查源模块的实际输出端口中是否存在名为 source_port_name 的端口
+                actual_source_port_exists = any(p.name == source_port_name for p in source_module.output_ports.values())
+                if not actual_source_port_exists:
+                    # glogger.warning(f"  - 源模块 '{source_module.name}' 当前变体下不存在名为 '{source_port_name}' 的输出端口。")
+                    continue # 跳过此连接，尝试其他可能的连接（如果有）
+
+                # 直接按端口名称从执行结果中获取数据
+                if isinstance(source_module_outputs, dict) and source_port_name in source_module_outputs:
+                    data = source_module_outputs[source_port_name]
+                    # glogger.info(f"  - 从 '{source_module.name}' 的输出端口 '{source_port_name}' 获取数据: {data}")
+                    return data
+                # elif not isinstance(source_module_outputs, dict) and actual_source_port_exists:
+                    # 如果输出不是字典，但端口确实存在（例如，模块直接返回单个值且只有一个输出端口）
+                    # 这种情况比较模糊，需要约定模块如何返回单输出值。为安全起见，要求输出是包含端口名的字典。
+                    # glogger.warning(f"  - 源模块 '{source_module.name}' 的输出不是字典，但期望端口 '{source_port_name}' 存在。输出: {source_module_outputs}. 无法按名称提取。"))
+                    # 如果只有一个输出端口，且名称匹配，可以考虑直接返回值。但需谨慎。
+                    # if len(source_module.output_ports) == 1 and list(source_module.output_ports.values())[0].name == source_port_name:
+                    #     return source_module_outputs
+                # else:
+                    # glogger.info(f"  - 在源模块 '{source_module.name}' 的输出中未直接找到名为 '{source_port_name}' 的键。Outputs: {source_module_outputs}")
+            # else:
+                # glogger.info(f"  - 源模块 '{source_module.name}' (ID: {source_module_id}) 尚未执行或无结果。")
         
-        glogger.info(f"  - 未找到有效的数据源")
-        return None
+        # glogger.info(f"  - 未找到有效的数据源或源模块 '{source_module.name if 'source_module' in locals() else '未知'}' 的输出中不包含端口 '{source_port_name if 'source_port_name' in locals() else '未知'}'。")
+        return None # 如果遍历完所有连接都没有找到数据
     
     def _execute_workflow(self) -> None:
         """工作流执行逻辑"""
@@ -413,16 +394,17 @@ class WorkflowEngine:
                 
                 # 准备输入数据
                 inputs = {}
-                for port_id, port in module.input_ports.items():
-                    # 查找连接的数据源
-                    source_data = self._get_source_data(workflow, module_id, port_id)
+                for port_id, port_obj in module.input_ports.items(): # 使用 port_obj 获取名称
+                    # 查找连接的数据源 (现在传递 port_obj.name)
+                    source_data = self._get_source_data(workflow, module_id, port_obj.name)
                     if source_data is not None:
-                        # 记录源数据到日志，帮助调试
-                        glogger.info(f"为模块 '{module.name}' 的输入端口 '{port_id}' 找到数据: {source_data}")
-                        inputs[port_id] = source_data
+                        # glogger.info(f"为模块 '{module.name}' 的输入端口 '{port_obj.name}' (ID: {port_id}) 找到数据: {source_data}")
+                        inputs[port_obj.name] = source_data # 使用端口名称作为键存储输入
+                    # else:
+                        # glogger.info(f"为模块 '{module.name}' 的输入端口 '{port_obj.name}' (ID: {port_id}) 未找到数据源或数据为None。")
                 
                 # 记录输入数据日志
-                glogger.info(f"模块 '{module.name}' 的输入数据: {inputs}")
+                # glogger.info(f"模块 '{module.name}' (ID: {module_id}) 的输入数据 (按名称): {inputs}")
                 
                 # 执行模块
                 module._execution_status = "running"
@@ -430,11 +412,11 @@ class WorkflowEngine:
                     outputs = module.execute(inputs)
                     module._execution_status = "completed"
                     
-                    # 存储输出数据
+                    # 存储输出数据 (模块的 execute 应返回以端口名为键的字典)
                     self._execution_results[module_id] = outputs
                     
                     # 记录输出数据日志
-                    glogger.info(f"模块 '{module.name}' 的输出数据: {outputs}")
+                    # glogger.info(f"模块 '{module.name}' (ID: {module_id}) 的输出数据: {outputs}")
                     
                     # 通知模块执行完成
                     self._notify_progress(ProgressCallbackType.MODULE_COMPLETE, {

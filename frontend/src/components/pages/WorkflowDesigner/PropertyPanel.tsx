@@ -1,22 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, InputNumber, Select, Switch, Typography, Empty, ColorPicker } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, Form, Input, InputNumber, Select, Switch, Typography, Empty, ColorPicker, Checkbox } from 'antd';
 import ResizeHandle from './ResizeHandle';
-import { getModuleById, PropertyType, ModulePropertyDefinition } from '../../../models/moduleDefinitions';
+import { getModuleById, PropertyType, ModulePropertyDefinition, VariantDefinitionFE, PortDefinitionFE } from '../../../models/moduleDefinitions';
+import { CustomNodeData } from './CustomNode';
 
 const { Option } = Select;
 
 // 属性面板Props接口
 interface PropertyPanelProps {
-  selectedNode: any | null;
-  width: number;                      // 卡片宽度
-  onResize: (newWidth: number) => void; // 调整大小回调
+  selectedNode: { data: CustomNodeData, id: string } | null;
+  width: number;                      
+  onResize: (newWidth: number) => void; 
+  onNodeDataChange: (nodeId: string, newNodeData: Partial<CustomNodeData>) => void;
 }
 
 /**
  * 属性面板组件
  * 根据选中的节点类型，显示不同的属性配置选项
  */
-const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onResize }) => {
+const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onResize, onNodeDataChange }) => {
   // 卡片位置状态
   const [rightPosition] = useState(10);
   // 表单实例
@@ -27,18 +29,78 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
     if (selectedNode) {
       form.resetFields();
       form.setFieldsValue({
-        name: selectedNode.name || '',
-        description: selectedNode.description || '',
-        ...selectedNode.properties,
+        name: selectedNode.data.name || '',
+        description: selectedNode.data.description || '',
+        currentVariantId: selectedNode.data.currentVariantId || undefined,
+        ...selectedNode.data.properties,
+        ...(selectedNode.data.activePortsConfig || {})
       });
+    } else {
+      form.resetFields();
     }
   }, [selectedNode, form]);
   
-  // 处理表单值变更
-  const handleValueChange = (changedValues: any) => {
-    console.log('属性变更:', changedValues);
-    // 在实际应用中，这里会更新节点属性
-  };
+  // 处理表单值变更（包括变体选择和端口启用/禁用）
+  const handleValuesChange = useCallback((changedValues: any, allValues: any) => {
+    if (!selectedNode) return;
+
+    let newVariantId = selectedNode.data.currentVariantId;
+    let newActivePortsConfig = { ...(selectedNode.data.activePortsConfig || {}) };
+    let nodeDataChanged = false;
+
+    // 检查是否是变体选择变化
+    if ('currentVariantId' in changedValues) {
+      newVariantId = changedValues.currentVariantId;
+      // 当变体改变时，可能需要重置/更新 activePortsConfig
+      const selectedVariant = selectedNode.data.availableVariants?.find(v => v.variant_id === newVariantId);
+      if (selectedVariant) {
+        const updatedConfig: { [key: string]: boolean } = {};
+        selectedVariant.port_definitions.forEach(pd => {
+          if (pd.is_optional) {
+            // 保留现有的用户选择，如果端口仍然存在；否则使用新变体的默认值
+            updatedConfig[pd.name] = newActivePortsConfig[pd.name] !== undefined 
+                                      ? newActivePortsConfig[pd.name] 
+                                      : pd.default_enabled;
+          }
+        });
+        newActivePortsConfig = updatedConfig;
+         // 更新表单以反映新的可选端口配置
+        form.setFieldsValue(newActivePortsConfig);
+      }
+      nodeDataChanged = true;
+    }
+
+    // 检查是否是可选端口的启用状态变化
+    // 可选端口的表单项名称就是端口名
+    const currentSelectedVariant = selectedNode.data.availableVariants?.find(v => v.variant_id === newVariantId);
+    currentSelectedVariant?.port_definitions.forEach(pd => {
+      if (pd.is_optional && pd.name in changedValues) {
+        newActivePortsConfig[pd.name] = changedValues[pd.name];
+        nodeDataChanged = true;
+      }
+    });
+    
+    // 更新通用属性如 name, description 和自定义参数
+    const newProperties = { ...selectedNode.data.properties };
+    let propertiesChanged = false;
+    for (const key in changedValues) {
+        if (key !== 'currentVariantId' && !currentSelectedVariant?.port_definitions.some(pd => pd.is_optional && pd.name === key)) {
+            // @ts-ignore
+            newProperties[key] = changedValues[key];
+            propertiesChanged = true;
+        }
+    }
+
+    if (nodeDataChanged || propertiesChanged ) {
+      onNodeDataChange(selectedNode.id, {
+        name: allValues.name, // 从 allValues 获取最新值
+        description: allValues.description, // 从 allValues 获取最新值
+        properties: newProperties,
+        currentVariantId: newVariantId,
+        activePortsConfig: newActivePortsConfig,
+      });
+    }
+  }, [selectedNode, onNodeDataChange, form]);
   
   // 根据属性类型渲染表单项
   const renderFormItem = (property: ModulePropertyDefinition) => {
@@ -95,9 +157,14 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
       );
     }
     
-    // 获取模块定义
-    const moduleDefinition = getModuleById(selectedNode.id);
+    // nodeData from selectedNode.data
+    const nodeData = selectedNode.data;
+
+    // 获取模块定义 (可以考虑从 nodeData.moduleDef 获取，如果它在创建节点时被填充)
+    const moduleDefinition = getModuleById(nodeData.id);
     
+    const currentSelectedVariant = nodeData.availableVariants?.find((variant: VariantDefinitionFE) => variant.variant_id === nodeData.currentVariantId);
+
     if (!moduleDefinition) {
       return (
         <Empty 
@@ -111,11 +178,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
       <Form
         form={form}
         layout="vertical"
-        initialValues={{
-          name: selectedNode.name || '',
-          description: selectedNode.description || '',
-        }}
-        onValuesChange={handleValueChange}
+        onValuesChange={handleValuesChange}
       >
         <Typography.Title level={5}>基本属性</Typography.Title>
         
@@ -127,7 +190,37 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
           <Input.TextArea rows={2} />
         </Form.Item>
         
-        {moduleDefinition.properties.length > 0 && (
+        {/* 变体选择器和配置 */}
+        {nodeData.availableVariants && nodeData.availableVariants.length > 0 && (
+          <>
+            <Typography.Title level={5}>变体配置</Typography.Title>
+            <Form.Item label="选择变体" name="currentVariantId">
+              <Select placeholder="选择一个模块变体">
+                {nodeData.availableVariants.map((variant: VariantDefinitionFE) => (
+                  <Option key={variant.variant_id} value={variant.variant_id}>
+                    {variant.variant_name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {/* 可选端口配置 */}
+            {currentSelectedVariant && currentSelectedVariant.port_definitions.filter(pd => pd.is_optional).length > 0 && (
+              <Form.Item label="可选端口">
+                {currentSelectedVariant.port_definitions
+                  .filter((pd: PortDefinitionFE) => pd.is_optional)
+                  .map((pd: PortDefinitionFE) => (
+                    <Form.Item key={pd.name} name={pd.name} valuePropName="checked" noStyle>
+                       <Checkbox>{pd.description || pd.name}</Checkbox>
+                    </Form.Item>
+                  ))}
+              </Form.Item>
+            )}
+          </>
+        )}
+        
+        {/* 模块属性 */}
+        {moduleDefinition && moduleDefinition.properties.length > 0 && (
           <>
             <Typography.Title level={5}>模块属性</Typography.Title>
             

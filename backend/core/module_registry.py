@@ -1,5 +1,5 @@
 from typing import Dict, Type, List, Any, Optional
-from .base_module import BaseModule
+from .base_module import BaseModule, VariantDefinition
 
 class ModuleRegistry:
     """
@@ -103,8 +103,8 @@ class ModuleRegistry:
         
         Args:
             module_name: 模块类名称
-            *args: 传递给模块构造函数的位置参数
-            **kwargs: 传递给模块构造函数的关键字参数
+            *args: 传递给模块构造函数的位置参数 (会被 initial_variant_id 和 initial_ports_config 覆盖，如果它们在kwargs中提供)
+            **kwargs: 传递给模块构造函数的关键字参数，可包含 initial_variant_id 和 initial_ports_config
             
         Returns:
             模块实例或None（如果模块类不存在）
@@ -113,7 +113,43 @@ class ModuleRegistry:
         if module_class is None:
             return None
         
-        return module_class(*args, **kwargs)
+        # 提取变体相关参数，如果存在的话
+        # initial_variant_id = kwargs.pop('initial_variant_id', None)
+        # initial_ports_config = kwargs.pop('initial_ports_config', None)
+        
+        # return module_class(
+        #     *args, 
+        #     initial_variant_id=initial_variant_id, 
+        #     initial_ports_config=initial_ports_config, 
+        #     **kwargs
+        # )
+        # 确保 initial_variant_id 和 initial_ports_config (如果提供) 正确传递给构造函数
+        # BaseModule 的 __init__ 现在接受这些参数
+        return module_class(*args, **kwargs) # 直接传递所有kwargs
+
+    def get_module_variant_details(self, module_name: str) -> Optional[Dict[str, VariantDefinition]]:
+        """
+        获取指定模块类型支持的所有变体定义及其端口定义。
+
+        Args:
+            module_name: 模块类名称。
+
+        Returns:
+            一个字典，键是变体ID，值是 VariantDefinition；如果模块不存在或未实现则返回None。
+        """
+        module_class = self.get(module_name)
+        if module_class and hasattr(module_class, '_get_variant_definitions'):
+            try:
+                # _get_variant_definitions 是一个类方法
+                return module_class._get_variant_definitions()
+            except NotImplementedError:
+                # 如果子类没有正确实现 _get_variant_definitions
+                return None # 或者返回一个空字典，或者记录一个错误
+            except Exception as e:
+                # 处理其他潜在错误
+                # print(f"Error getting variant details for {module_name}: {e}")
+                return None
+        return None
 
 
 # 创建全局模块注册表实例
