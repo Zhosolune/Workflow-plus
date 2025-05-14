@@ -80,7 +80,7 @@ const Canvas: React.FC<CanvasProps> = ({
   // 处理节点选择 (保持不变, onNodeSelect is a prop)
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      onNodeSelect(node.data);
+      onNodeSelect(node); // 修改：传递整个 node 对象，而不是 node.data
     },
     [onNodeSelect]
   );

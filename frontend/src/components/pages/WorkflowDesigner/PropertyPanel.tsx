@@ -26,7 +26,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
   
   // 当选中节点变化时，重置表单
   useEffect(() => {
-    if (selectedNode) {
+    if (selectedNode && selectedNode.data) {
       form.resetFields();
       form.setFieldsValue({
         name: selectedNode.data.name || '',
@@ -35,8 +35,9 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
         ...selectedNode.data.properties,
         ...(selectedNode.data.activePortsConfig || {})
       });
-    } else {
-      form.resetFields();
+    } else if (!selectedNode) {
+      // 当没有选中节点时，Form 组件未渲染，不应调用 form.resetFields()
+      // form.resetFields(); // Removed this line
     }
   }, [selectedNode, form]);
   
@@ -148,7 +149,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
   
   // 渲染属性表单
   const renderPropertyForm = () => {
-    if (!selectedNode) {
+    if (!selectedNode || !selectedNode.data) {
       return (
         <Empty 
           description="选择一个节点查看属性" 

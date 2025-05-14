@@ -124,8 +124,16 @@ const WorkflowDesigner: React.FC = () => {
    * 处理节点选择
    * @param node - 被选中的节点数据
    */
-  const handleNodeSelect = (node: any) => {
-    setSelectedNode(node);
+  const handleNodeSelect = (node: Node) => {
+    console.log('WorkflowDesigner: handleNodeSelect triggered. Node:', node);
+    if (node && node.data) {
+      console.log('WorkflowDesigner: node.data:', node.data);
+      setSelectedNode({ data: node.data as CustomNodeData, id: node.id });
+    } else {
+      console.warn('WorkflowDesigner: handleNodeSelect called with invalid node or node.data. Node:', node);
+      // 可以选择不更新 selectedNode 或设置为 null，以避免下游错误
+      // setSelectedNode(null); 
+    }
   };
 
   /**

@@ -72,6 +72,31 @@ const ModuleLibrary: React.FC<ModuleLibraryProps> = ({ width, onResize }) => {
     );
   };
 
+  // 为 Collapse 组件准备 items
+  const collapseItems = MODULE_CATEGORIES.map((category) => {
+    const filteredModules = getFilteredModules(category.key);
+
+    // 如果搜索后没有匹配的模块，则不生成此分类的 item
+    if (searchValue && filteredModules.length === 0) {
+      return null;
+    }
+
+    return {
+      key: category.key,
+      label: category.title,
+      children: (
+        <List
+          dataSource={filteredModules}
+          renderItem={(module) => (
+            <List.Item style={{ padding: 0 }}>
+              <DraggableModule module={module} />
+            </List.Item>
+          )}
+        />
+      ),
+    };
+  }).filter(item => item !== null); // 过滤掉 null 项
+
   // 计算卡片位置和样式
   const cardStyle = {
     width: width,
@@ -110,30 +135,12 @@ const ModuleLibrary: React.FC<ModuleLibraryProps> = ({ width, onResize }) => {
           prefix={<SearchOutlined />}
         />
         
-        {/* 使用老式API方式渲染Collapse组件以避免类型问题 */}
-        <Collapse defaultActiveKey={['data-source']} ghost>
-          {MODULE_CATEGORIES.map((category) => {
-            const filteredModules = getFilteredModules(category.key);
-            
-            // 如果搜索后没有匹配的模块，则不显示此分类
-            if (searchValue && filteredModules.length === 0) {
-              return null;
-            }
-            
-            return (
-              <Panel key={category.key} header={category.title}>
-                <List
-                  dataSource={filteredModules}
-                  renderItem={(module) => (
-                    <List.Item style={{ padding: 0 }}>
-                      <DraggableModule module={module} />
-                    </List.Item>
-                  )}
-                />
-              </Panel>
-            );
-          })}
-        </Collapse>
+        {/* 使用新的API方式渲染Collapse组件 */}
+        <Collapse 
+          defaultActiveKey={['data-source']} 
+          ghost 
+          items={collapseItems}
+        />
       </Card>
       
       {/* 添加拖拽手柄，位置调整到Card右侧边缘 */}
