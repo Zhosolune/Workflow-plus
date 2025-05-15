@@ -133,7 +133,6 @@ const Canvas: React.FC<CanvasProps> = ({
           connectionLineType={ConnectionLineType.SmoothStep}
           snapToGrid={true}
           snapGrid={[15, 15]}
-          fitView
         >
           <Background 
             variant={BackgroundVariant.Dots} 

@@ -329,6 +329,48 @@ export const MODULE_DEFINITIONS: ModuleDefinition[] = [
     outputs: 1,
     color: '#9c27b0',
   },
+  {
+    id: 'dbscan-cluster',
+    name: 'DBSCAN 聚类',
+    icon: '🧩',
+    type: ModuleType.ANALYZER,
+    category: 'analysis-tools',
+    description: '使用DBSCAN算法进行基于密度的空间聚类。',
+    properties: [
+      {
+        id: 'eps',
+        name: 'Epsilon (邻域半径)',
+        type: PropertyType.NUMBER,
+        defaultValue: 0.5,
+        min: 0.001,
+        required: true,
+        description: '定义一个点的邻域半径大小。该值影响聚类的粒度。'
+      },
+      {
+        id: 'min_samples',
+        name: '最小样本数',
+        type: PropertyType.NUMBER,
+        defaultValue: 5,
+        min: 1,
+        required: true,
+        description: '一个点成为核心点所需的最小邻域点数（包含自身）。'
+      },
+      {
+        id: 'metric',
+        name: '距离度量',
+        type: PropertyType.SELECT,
+        options: [
+          { label: '欧氏距离 (Euclidean)', value: 'euclidean' },
+          { label: '曼哈顿距离 (Manhattan)', value: 'manhattan' },
+        ],
+        defaultValue: 'euclidean',
+        description: '用于计算样本间距离的度量方法。'
+      }
+    ],
+    inputs: 1, 
+    outputs: 1, 
+    color: '#9c27b0', 
+  },
 
   // 可视化
   {

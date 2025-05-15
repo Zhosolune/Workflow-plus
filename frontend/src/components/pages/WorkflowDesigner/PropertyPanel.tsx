@@ -28,18 +28,49 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
   useEffect(() => {
     if (selectedNode && selectedNode.data) {
       form.resetFields();
-      form.setFieldsValue({
-        name: selectedNode.data.name || '',
-        description: selectedNode.data.description || '',
-        currentVariantId: selectedNode.data.currentVariantId || undefined,
-        ...selectedNode.data.properties,
-        ...(selectedNode.data.activePortsConfig || {})
-      });
+      // 关键改动：如果 selectedNode.data.moduleDef 存在，则表示是预览模式
+      // 否则是实际画布节点
+      const moduleDefinitionToUse = selectedNode.data.moduleDef || getModuleById(selectedNode.data.id);
+      
+      // 确保我们有一个有效的模块定义来填充表单
+      // 对于预览，moduleDefinitionToUse 应该是 moduleDef
+      // 对于实际节点，它应该是从 getModuleById 获取的，或者也可能已经存在于 selectedNode.data.moduleDef (如果创建节点时填充了)
+      if (moduleDefinitionToUse) {
+        form.setFieldsValue({
+          name: selectedNode.data.name || moduleDefinitionToUse.name || '', // 优先使用节点实例的 name
+          description: selectedNode.data.description || moduleDefinitionToUse.description || '', // 优先使用节点实例的 description
+          currentVariantId: selectedNode.data.currentVariantId, // 这个应该总是来自 selectedNode.data
+          ...selectedNode.data.properties, // 属性值来自节点实例
+          ...(selectedNode.data.activePortsConfig || {}) // 端口配置来自节点实例
+        });
+      } else if (selectedNode.data.id?.startsWith('preview_')) {
+        // 如果是预览模式但 moduleDef 丢失，至少填充基础信息
+        // 但理想情况下，moduleDef 应该总是存在于预览数据中
+        form.setFieldsValue({
+          name: selectedNode.data.name || '',
+          description: selectedNode.data.description || '',
+          currentVariantId: selectedNode.data.currentVariantId,
+          ...selectedNode.data.properties,
+          ...(selectedNode.data.activePortsConfig || {})
+        });
+        console.warn("PropertyPanel: Preview mode, but moduleDef is missing in selectedNode.data. Falling back to basic info.");
+      } else {
+        // 对于非预览节点，如果 getModuleById 找不到，则是个问题
+        console.warn(`PropertyPanel: Could not find module definition for ID: ${selectedNode.data.id}. Form might be incomplete.`);
+        // 仍然尝试设置基础字段，以防万一
+        form.setFieldsValue({
+          name: selectedNode.data.name || '',
+          description: selectedNode.data.description || '',
+          // currentVariantId: selectedNode.data.currentVariantId, // 可能不存在
+          ...selectedNode.data.properties,
+          // ...(selectedNode.data.activePortsConfig || {}) // 可能不存在
+        });
+      }
     } else if (!selectedNode) {
       // 当没有选中节点时，Form 组件未渲染，不应调用 form.resetFields()
       // form.resetFields(); // Removed this line
     }
-  }, [selectedNode, form]);
+  }, [selectedNode, form]); // 保持 form 在依赖项中，因为 setFieldsValue 依赖它
   
   // 处理表单值变更（包括变体选择和端口启用/禁用）
   const handleValuesChange = useCallback((changedValues: any, allValues: any) => {
@@ -161,8 +192,10 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedNode, width, onRe
     // nodeData from selectedNode.data
     const nodeData = selectedNode.data;
 
-    // 获取模块定义 (可以考虑从 nodeData.moduleDef 获取，如果它在创建节点时被填充)
-    const moduleDefinition = getModuleById(nodeData.id);
+    // 获取模块定义
+    // 关键改动：优先使用 nodeData.moduleDef (来自预览或已加载的节点数据)
+    // 否则回退到 getModuleById (主要用于已存在于画布但未预加载 moduleDef 的旧节点，或者如果这种场景仍然需要支持)
+    const moduleDefinition = nodeData.moduleDef || getModuleById(nodeData.id);
     
     const currentSelectedVariant = nodeData.availableVariants?.find((variant: VariantDefinitionFE) => variant.variant_id === nodeData.currentVariantId);
 
