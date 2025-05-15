@@ -6,19 +6,24 @@ from typing import Dict, Any
 # 添加父目录到系统路径，以便导入核心模块
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.base_module import BaseModule
-from core.workflow import Workflow
-from core.module_registry import ModuleRegistry, gmodule_registry
-from core.engine import WorkflowEngine, ProgressCallbackType
-from core.workflow import Connection
+# 导入核心包以触发其 __init__.py 中的模块注册
+import backend.workflow_modules 
 
-from examples.example_modules import (
+from backend.core.base_module import BaseModule
+from backend.core.workflow import Workflow
+from backend.core.module_registry import ModuleRegistry, gmodule_registry
+from backend.core.engine import WorkflowEngine, ProgressCallbackType
+from backend.core.workflow import Connection
+
+# 仅导入示例模块
+from backend.examples.example_modules import (
     NumberGeneratorModule,
     MathOperationModule,
     TextProcessingModule,
     ConditionalModule,
     TimeDelayModule
 )
+# DBSCANModule 的导入和注册已移至 backend.workflow_modules.__init__.py
 
 def print_callback(event_type: str, event_data: Dict[str, Any]) -> None:
     """打印工作流执行进度的回调函数"""
@@ -291,12 +296,17 @@ def main():
     """主函数"""
     print("开始注册模块...")
     
-    # 注册模块类型
-    gmodule_registry.register(NumberGeneratorModule, "基础")
-    gmodule_registry.register(MathOperationModule, "基础")
-    gmodule_registry.register(TextProcessingModule, "基础")
-    gmodule_registry.register(ConditionalModule, "控制")
-    gmodule_registry.register(TimeDelayModule, "控制")
+    # 注册核心模块 (通过导入 backend.workflow_modules)
+    # 导入 backend.workflow_modules 会触发其 __init__.py, 
+    # 进而调用 backend/workflow_modules/registry.py 中的 register_all_workflow_modules()
+    # 确保这行 import backend.workflow_modules 在所有 gmodule_registry 操作之前或在顶部
+
+    # 单独注册此示例文件特有的示例模块
+    gmodule_registry.register(NumberGeneratorModule, "输入与生成")
+    gmodule_registry.register(MathOperationModule, "数学运算")
+    gmodule_registry.register(TextProcessingModule, "文本处理")
+    gmodule_registry.register(ConditionalModule, "逻辑控制")
+    gmodule_registry.register(TimeDelayModule, "辅助工具")
     
     print(f"已注册的模块类别: {gmodule_registry.get_categories()}")
     
