@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'; // Added useCallback
+import React, { useState, useRef, useCallback, useEffect } from 'react'; // Added useCallback and useEffect
 import { Layout, Button, Space, Modal } from 'antd';
 import {
   PlusOutlined,
@@ -21,6 +21,7 @@ import {
   Connection,
   Position,
   OnConnect,
+  ReactFlowProvider,
 } from '@xyflow/react'; // Added for types and hooks
 
 // 从 moduleDefinitions 导入 VariantDefinitionFE 和 PortDefinitionFE
@@ -150,6 +151,18 @@ const WorkflowDesigner: React.FC = () => {
   const [nodeIdCounter, setNodeIdCounter] = useState(1);
   // --- End of lifted state ---
 
+  useEffect(() => {
+    console.log("WorkflowDesigner: nodes state updated", nodes);
+    // 如果 selectedNode 存在，也打印它的数据，看是否与 nodes 中的一致
+    if (selectedNode) {
+      const sNodeFromNodes = nodes.find(n => n.id === selectedNode.id);
+      console.log("WorkflowDesigner: selectedNode data", selectedNode.data);
+      if (sNodeFromNodes) {
+        console.log("WorkflowDesigner: corresponding node in 'nodes' state", sNodeFromNodes.data);
+      }
+    }
+  }, [nodes, selectedNode]); // 当 nodes 或 selectedNode 变化时触发
+
   /**
    * 处理拖拽开始事件，用于 DragOverlay
    * @param event DragStartEvent
@@ -257,6 +270,7 @@ const WorkflowDesigner: React.FC = () => {
    * @param newNodeData 更新的部分节点数据
    */
   const onNodeDataChange = useCallback((nodeId: string, newNodeData: Partial<CustomNodeData>) => {
+    console.log(`WorkflowDesigner: onNodeDataChange called for nodeId: ${nodeId}`, newNodeData); // <--- 新增日志
     setNodes((nds) => {
       // 检查是否为变体切换或端口配置变更
       const node = nds.find(n => n.id === nodeId);
@@ -299,6 +313,8 @@ const WorkflowDesigner: React.FC = () => {
             setNodes((nds2) => nds2.map((n) => {
               if (n.id === nodeId) {
                 const updatedData = { ...n.data, ...newNodeData } as CustomNodeData;
+                delete updatedData.inputs; // 清理旧属性
+                delete updatedData.outputs; // 清理旧属性
                 return { ...n, data: updatedData };
               }
               return n;
@@ -306,7 +322,10 @@ const WorkflowDesigner: React.FC = () => {
             updateWorkflowStatus({ saved: false });
             setSelectedNode((prevSelNode: { data: CustomNodeData, id: string } | null) => {
               if (prevSelNode && prevSelNode.id === nodeId) {
-                return { ...prevSelNode, data: { ...prevSelNode.data, ...newNodeData } as CustomNodeData };
+                const updatedSelectedData = { ...prevSelNode.data, ...newNodeData } as CustomNodeData;
+                delete updatedSelectedData.inputs;
+                delete updatedSelectedData.outputs;
+                return { ...prevSelNode, data: updatedSelectedData };
               }
               return prevSelNode;
             });
@@ -318,24 +337,30 @@ const WorkflowDesigner: React.FC = () => {
         return nds; // 暂不更新节点，等待用户确认
       }
       // 无需弹窗，直接更新节点数据
-      return nds.map((node) => {
-        if (node.id === nodeId) {
+      return nds.map((nodeToUpdate) => { // Renamed 'node' to 'nodeToUpdate' to avoid conflict
+        if (nodeToUpdate.id === nodeId) {
           // 创建一个新的 data 对象，合并旧数据和新数据
-          const updatedData = { ...node.data, ...newNodeData } as CustomNodeData; // 明确类型
+          const baseData = { ...nodeToUpdate.data, ...newNodeData } as CustomNodeData;
+          
+          // 清理旧的、可能与新变体冲突的顶层端口数量属性
+          delete baseData.inputs;  // Attempt to delete, won't error if not present
+          delete baseData.outputs; // Attempt to delete, won't error if not present
+          
           return {
-            ...node,
-            data: updatedData,
+            ...nodeToUpdate,
+            data: baseData,
           };
         }
-        return node;
+        return nodeToUpdate;
       });
     });
     updateWorkflowStatus({ saved: false }); // 标记工作流为未保存
-    // 如果选中的节点就是当前更改的节点，也更新selectedNode状态以确保属性面板自身也能响应某些联动变化（如果需要）
-    // 但通常属性面板的Form会通过allValues自行管理其当前显示，这里的selectedNode更新更多是为了其他可能的副作用
     setSelectedNode((prevSelNode: { data: CustomNodeData, id: string } | null) => { // 添加类型
       if (prevSelNode && prevSelNode.id === nodeId) {
-        return { ...prevSelNode, data: { ...prevSelNode.data, ...newNodeData } as CustomNodeData };
+        const updatedSelectedData = { ...prevSelNode.data, ...newNodeData } as CustomNodeData;
+        delete updatedSelectedData.inputs; // 清理旧属性
+        delete updatedSelectedData.outputs; // 清理旧属性
+        return { ...prevSelNode, data: updatedSelectedData };
       }
       return prevSelNode;
     });
@@ -567,85 +592,87 @@ const WorkflowDesigner: React.FC = () => {
   );
 
   return (
-    <Layout className="workflow-designer" style={{ height: '100%' }}>
-      {/* 顶部操作栏 - 使用SubHeader组件 */}
-      <SubHeader
-        title="模块化工作流设计器"
-        actions={headerActions}
-        height="60px"
-      />
+    <ReactFlowProvider>
+      <Layout className="workflow-designer" style={{ height: '100%' }}>
+        {/* 顶部操作栏 - 使用SubHeader组件 */}
+        <SubHeader
+          title="模块化工作流设计器"
+          actions={headerActions}
+          height="60px"
+        />
 
-      {/* 主内容区 - 包裹在DndContext中 */}
-      <DndContext
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <Content 
-          ref={contentRef}
-          style={{ 
-            position: 'relative', 
-            flex: 1,
-          }}
+        {/* 主内容区 - 包裹在DndContext中 */}
+        <DndContext
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         >
-          {/* 画布 - 传递提升后的状态和回调 */}
-          <Canvas
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeSelect={handleNodeSelect}
-            updateWorkflowStatus={updateWorkflowStatus}
-            moduleLibraryWidth={moduleLibraryWidth} 
-            propertyPanelWidth={propertyPanelWidth} 
-            contentWidth={contentWidth}
-          />
+          <Content 
+            ref={contentRef}
+            style={{ 
+              position: 'relative', 
+              flex: 1,
+            }}
+          >
+            {/* 画布 - 传递提升后的状态和回调 */}
+            <Canvas
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onNodeSelect={handleNodeSelect}
+              updateWorkflowStatus={updateWorkflowStatus}
+              moduleLibraryWidth={moduleLibraryWidth} 
+              propertyPanelWidth={propertyPanelWidth} 
+              contentWidth={contentWidth}
+            />
 
-          {/* 模块库 */}
-          <ModuleLibrary 
-            width={moduleLibraryWidth}
-            onResize={handleModuleLibraryResize}
-          />
+            {/* 模块库 */}
+            <ModuleLibrary 
+              width={moduleLibraryWidth}
+              onResize={handleModuleLibraryResize}
+            />
 
-          {/* 属性面板 */}
-          <PropertyPanel 
-            selectedNode={selectedNode} 
-            width={propertyPanelWidth}
-            onResize={handlePropertyPanelResize}
-            onNodeDataChange={onNodeDataChange}
-          />
-        </Content>
-        {/* 拖拽预览层 */}
-        <DragOverlay dropAnimation={null}>
-          {draggedModule ? (
-            <div // 使用一个简单的 div 作为预览，可以后续美化成 DraggableModule 样式
-              style={{
-                padding: '8px',
-                margin: '4px 0',
-                background: '#fff',
-                border: '1px solid #e8e8e8',
-                borderRadius: '4px',
-                cursor: 'grabbing', // 通常拖拽时是 grabbing
-                opacity: 0.75, // 给一点透明度
-                display: 'flex',
-                alignItems: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                width: 'fit-content', // 自适应内容宽度
-              }}
-            >
-              <span style={{ marginRight: '8px', fontSize: '20px' }}>{draggedModule.icon}</span>
-              <span>{draggedModule.name}</span>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+            {/* 属性面板 */}
+            <PropertyPanel 
+              selectedNode={selectedNode} 
+              width={propertyPanelWidth}
+              onResize={handlePropertyPanelResize}
+              onNodeDataChange={onNodeDataChange}
+            />
+          </Content>
+          {/* 拖拽预览层 */}
+          <DragOverlay dropAnimation={null}>
+            {draggedModule ? (
+              <div // 使用一个简单的 div 作为预览，可以后续美化成 DraggableModule 样式
+                style={{
+                  padding: '8px',
+                  margin: '4px 0',
+                  background: '#fff',
+                  border: '1px solid #e8e8e8',
+                  borderRadius: '4px',
+                  cursor: 'grabbing', // 通常拖拽时是 grabbing
+                  opacity: 0.75, // 给一点透明度
+                  display: 'flex',
+                  alignItems: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  width: 'fit-content', // 自适应内容宽度
+                }}
+              >
+                <span style={{ marginRight: '8px', fontSize: '20px' }}>{draggedModule.icon}</span>
+                <span>{draggedModule.name}</span>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
 
-      {/* 底部状态栏 - 使用SubFooter组件 */}
-      <SubFooter>
-        <StatusBar status={workflowStatus} />
-      </SubFooter>
-    </Layout>
+        {/* 底部状态栏 - 使用SubFooter组件 */}
+        <SubFooter>
+          <StatusBar status={workflowStatus} />
+        </SubFooter>
+      </Layout>
+    </ReactFlowProvider>
   );
 };
 

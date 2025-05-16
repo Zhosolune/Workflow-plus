@@ -139,6 +139,7 @@ const CustomNode = ({ data, selected }: NodeProps) => {
             ...portShape, // 根据端口类型设置形状
           }}
           title={`类型: ${portDef.data_type}${portDef.description ? ' | ' + portDef.description : ''}`}
+          isConnectable={true}
         />
       );
     }
