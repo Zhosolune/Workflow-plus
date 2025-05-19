@@ -22,6 +22,7 @@ import {
   Position,
   OnConnect,
   ReactFlowProvider,
+  useUpdateNodeInternals, // 导入 useUpdateNodeInternals 钩子
 } from '@xyflow/react'; // Added for types and hooks
 
 // 从 moduleDefinitions 导入 VariantDefinitionFE 和 PortDefinitionFE
@@ -271,6 +272,12 @@ const WorkflowDesigner: React.FC = () => {
    */
   const onNodeDataChange = useCallback((nodeId: string, newNodeData: Partial<CustomNodeData>) => {
     console.log(`WorkflowDesigner: onNodeDataChange called for nodeId: ${nodeId}`, newNodeData); // <--- 新增日志
+    
+    // 检查是否是变体或端口配置变更
+    const isVariantOrPortChange = 
+      newNodeData.currentVariantId !== undefined || 
+      newNodeData.activePortsConfig !== undefined;
+    
     setNodes((nds) => {
       // 检查是否为变体切换或端口配置变更
       const node = nds.find(n => n.id === nodeId);
@@ -329,6 +336,8 @@ const WorkflowDesigner: React.FC = () => {
               }
               return prevSelNode;
             });
+            
+            // 这里不再直接调用updateNodeInternals，改为在内部组件中调用
           },
           onCancel: () => {
             // 取消变体切换，不做任何更改
@@ -336,6 +345,7 @@ const WorkflowDesigner: React.FC = () => {
         });
         return nds; // 暂不更新节点，等待用户确认
       }
+      
       // 无需弹窗，直接更新节点数据
       return nds.map((nodeToUpdate) => { // Renamed 'node' to 'nodeToUpdate' to avoid conflict
         if (nodeToUpdate.id === nodeId) {
@@ -354,7 +364,9 @@ const WorkflowDesigner: React.FC = () => {
         return nodeToUpdate;
       });
     });
+    
     updateWorkflowStatus({ saved: false }); // 标记工作流为未保存
+    
     setSelectedNode((prevSelNode: { data: CustomNodeData, id: string } | null) => { // 添加类型
       if (prevSelNode && prevSelNode.id === nodeId) {
         const updatedSelectedData = { ...prevSelNode.data, ...newNodeData } as CustomNodeData;
@@ -364,6 +376,9 @@ const WorkflowDesigner: React.FC = () => {
       }
       return prevSelNode;
     });
+    
+    // 状态已更新，但此处不再调用updateNodeInternals，
+    // 我们会在ReactFlowProvider中创建一个内部组件来处理这个逻辑
   }, [setNodes, updateWorkflowStatus, edges]);
 
   /**
@@ -593,6 +608,15 @@ const WorkflowDesigner: React.FC = () => {
 
   return (
     <ReactFlowProvider>
+      {/* 创建一个内部组件来处理需要在ReactFlowProvider内部使用的Hooks */}
+      <InnerWorkflowDesigner 
+        nodes={nodes} 
+        selectedNode={selectedNode} 
+        isVariantOrPortChange={newNodeData => 
+          newNodeData.currentVariantId !== undefined || 
+          newNodeData.activePortsConfig !== undefined
+        }
+      />
       <Layout className="workflow-designer" style={{ height: '100%' }}>
         {/* 顶部操作栏 - 使用SubHeader组件 */}
         <SubHeader
@@ -674,6 +698,41 @@ const WorkflowDesigner: React.FC = () => {
       </Layout>
     </ReactFlowProvider>
   );
+};
+
+/**
+ * 内部组件，用于处理需要在ReactFlowProvider内部使用的Hooks
+ */
+interface InnerWorkflowDesignerProps {
+  nodes: Node[];
+  selectedNode: { data: CustomNodeData, id: string } | null;
+  isVariantOrPortChange: (newNodeData: Partial<CustomNodeData>) => boolean;
+}
+
+const InnerWorkflowDesigner: React.FC<InnerWorkflowDesignerProps> = ({ 
+  nodes, 
+  selectedNode,
+  isVariantOrPortChange
+}) => {
+  // 在ReactFlowProvider内部使用updateNodeInternals钩子
+  const updateNodeInternals = useUpdateNodeInternals();
+  
+  // 监听节点变化，特别是当变体或端口配置变化时
+  useEffect(() => {
+    if (selectedNode) {
+      const currentNode = nodes.find(n => n.id === selectedNode.id);
+      if (currentNode) {
+        const nodeData = currentNode.data as CustomNodeData;
+        if (nodeData && isVariantOrPortChange(nodeData)) {
+          // 使用setTimeout确保节点数据已更新
+          setTimeout(() => updateNodeInternals(selectedNode.id), 0);
+        }
+      }
+    }
+  }, [nodes, selectedNode, updateNodeInternals, isVariantOrPortChange]);
+  
+  // 这个组件不需要渲染任何内容
+  return null;
 };
 
 export default WorkflowDesigner;

@@ -106,6 +106,7 @@ const CustomNode = ({ data, selected }: NodeProps) => {
             ...portShape, // 根据端口类型设置形状
           }}
           title={`类型: ${portDef.data_type}${portDef.description ? ' | ' + portDef.description : ''}`}
+          isConnectable={true} // 确保所有输入端口都可连接
         />
       );
     }
@@ -117,12 +118,16 @@ const CustomNode = ({ data, selected }: NodeProps) => {
     const handles = [];
     for (let i = 0; i < outputCount; i++) {
       const portDef = outputPorts[i];
+      // 计算位置 - 关键修复：确保每个端口的位置是基于当前变体的端口数量和索引计算的
+      // 不要依赖旧的位置计算逻辑
       const position = outputCount > 1 
         ? { top: `${25 + (i * 50 / (outputCount - 1))}%` }
         : { top: '50%' };
+      
       // 根据端口数据类型设置颜色和形状
       const portColor = dataTypeToColor[portDef.data_type] || '#bfbfbf';
       const portShape = dataTypeToShape[portDef.data_type] || { borderRadius: '50%' };
+      
       handles.push(
         <Handle
           key={`output-${portDef.name}`}
@@ -139,7 +144,7 @@ const CustomNode = ({ data, selected }: NodeProps) => {
             ...portShape, // 根据端口类型设置形状
           }}
           title={`类型: ${portDef.data_type}${portDef.description ? ' | ' + portDef.description : ''}`}
-          isConnectable={true}
+          isConnectable={true} // 确保所有端口都可以连接
         />
       );
     }
