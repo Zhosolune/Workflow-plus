@@ -100,6 +100,16 @@ Workflow-plus/
 │   │   │           ├── PropertyPanel.tsx    # 属性面板
 │   │   │           ├── StatusBar.tsx        # 状态栏
 │   │   │           └── WorkflowDesigner.tsx # 设计器主组件
+│   │   ├── features/            # 特性相关代码目录
+│   │   │   └── workflowDesigner/ # 工作流设计器特性目录
+│   │   │       ├── hooks/       # 工作流设计器相关自定义hooks
+│   │   │       │   ├── useWorkflowManager.ts      # 工作流管理hook
+│   │   │       │   └── useWorkflowDragAndDrop.ts  # 拖拽功能hook
+│   │   │       ├── services/    # 工作流设计器相关服务
+│   │   │       │   └── moduleService.ts           # 模块服务
+│   │   │       ├── utils/       # 工作流设计器相关工具函数
+│   │   │       │   └── workflowUtils.ts           # 工作流工具函数
+│   │   │       └── types.ts     # 工作流设计器类型定义
 │   │   ├── routes/          # 路由配置
 │   │   ├── types/           # 类型定义
 │   │   ├── App.tsx          # 主应用组件
@@ -616,6 +626,32 @@ result = writer.execute({"content": "Hello World", "file_path": "output.txt"})  
 - 协调工作流操作（新建、打开、保存、运行）
 - 维护工作流状态（保存状态、节点数量）
 
+#### WorkflowDesigner (重构)
+
+**状态**: 已完成 ✅
+**版本**: 1.1
+**文件位置**: `frontend/src/components/pages/WorkflowDesigner/WorkflowDesigner.tsx`
+
+**主要变更**:
+- 实现业务逻辑与UI组件的分离
+- 创建专用Hook管理工作流状态和操作
+- 创建专用Hook处理拖拽和模块预览功能
+- 实现模块服务处理模块变体定义获取
+- 提取工具函数进行复用
+
+**改进效果**:
+- 提高代码可维护性
+- 便于单元测试
+- 支持功能扩展
+- 降低组件复杂度
+
+**相关文件**:
+- `frontend/src/features/workflowDesigner/hooks/useWorkflowManager.ts`
+- `frontend/src/features/workflowDesigner/hooks/useWorkflowDragAndDrop.ts`
+- `frontend/src/features/workflowDesigner/services/moduleService.ts`
+- `frontend/src/features/workflowDesigner/utils/workflowUtils.ts`
+- `frontend/src/features/workflowDesigner/types.ts`
+
 #### Canvas
 
 **状态**: 已完成 ✅
@@ -755,6 +791,22 @@ interface Module {
 - 系统托盘支持
 
 ## 最近更新记录
+
+### 2024-05-20: 工作流设计器组件重构与业务逻辑分离
+
+**主要变更**:
+- 创建features/workflowDesigner目录组织业务逻辑
+- 实现useWorkflowManager自定义Hook管理工作流状态和操作
+- 实现useWorkflowDragAndDrop自定义Hook处理拖拽功能
+- 提取moduleService处理模块变体API调用
+- 将WorkflowDesigner组件重构为纯UI组件
+- 更新前端API文档反映架构变更
+
+**变更原因**:
+将业务逻辑与UI组件分离，提高代码可维护性和可测试性，支持后续功能扩展。采用更现代化的前端架构模式，降低组件复杂度。
+
+**版本兼容性**:
+功能行为保持不变，仅对代码组织方式进行调整，不影响现有功能。
 
 ### 2025-05-09: 子界面Header和Footer组件拆分与主题适配
 
@@ -1200,6 +1252,22 @@ interface Module {
 
 ## 最近更新记录
 
+### 2024-05-20: 工作流设计器组件重构与业务逻辑分离
+
+**主要变更**:
+- 创建features/workflowDesigner目录组织业务逻辑
+- 实现useWorkflowManager自定义Hook管理工作流状态和操作
+- 实现useWorkflowDragAndDrop自定义Hook处理拖拽功能
+- 提取moduleService处理模块变体API调用
+- 将WorkflowDesigner组件重构为纯UI组件
+- 更新前端API文档反映架构变更
+
+**变更原因**:
+将业务逻辑与UI组件分离，提高代码可维护性和可测试性，支持后续功能扩展。采用更现代化的前端架构模式，降低组件复杂度。
+
+**版本兼容性**:
+功能行为保持不变，仅对代码组织方式进行调整，不影响现有功能。
+
 ### 2025-05-09: 子界面Header和Footer组件拆分与主题适配
 
 **主要变更**:
@@ -1417,17 +1485,145 @@ interface Module {
 
 ## 代码规范
 
-### JavaScript/React 代码规范
+### 通用规范
+
+- **文件编码**: 统一使用UTF-8编码
+- **行尾**: 使用LF (Unix风格) 换行符
+- **缩进**: 使用4个空格（不使用制表符）
+- **行长**: 限制每行最多88个字符
+- **文件结构**: 每个文件应包含适当的文件头注释
+- **TODO标记**: 使用 `# TODO: 说明` 格式标记待办事项
+
+### Python代码规范
+
+- **PEP8**: 遵循PEP8编码规范
+- **类型提示**: 所有函数和方法都应使用类型提示 (PEP 484)
+- **文档字符串**: 使用Google风格的docstring
+- **导入顺序**: 标准库 > 第三方库 > 本地模块，按字母排序
+- **命名约定**:
+  - 类名: 使用CamelCase（如BaseModule）
+  - 函数/方法名: 使用snake_case（如add_module）
+  - 常量: 使用UPPER_CASE（如MAX_MODULES）
+  - 模块成员变量: 使用_前缀（如self._id）
+  - 全局变量: 使用g前缀（如gmodule_registry）
+
+### JavaScript/TypeScript代码规范
 
 - **格式化**: 使用Prettier，ESLint检查
 - **组件**: 优先使用函数组件和Hooks
+- **状态管理**: 使用React Context或Redux
+- **类型**: 使用TypeScript进行类型定义
 - **命名约定**:
   - 组件: 使用PascalCase（如WorkflowEditor）
   - 函数/变量: 使用camelCase（如connectModules）
   - 常量: 使用UPPER_CASE（如DEFAULT_SETTINGS）
-  - 类的成员变量: 使用_前缀（如this._id）
-  - 全局变量: 使用g前缀（如gmodule_registry）
+  - 接口: 使用I前缀（如IModuleProps）
 - **文件组织**: 每个组件一个文件，与组件同名
+
+## 贡献指南
+
+### 开发环境设置
+
+1. **后端开发环境**:
+   - Python 3.8+
+   - 无需第三方依赖（目前）
+
+2. **前端开发环境**:
+   - Node.js 16+
+   - npm 8+
+   - 安装依赖：`cd frontend && npm install`
+
+3. **Tauri开发环境**:
+   - 按照[Tauri官方文档](https://tauri.app/v1/guides/getting-started/prerequisites)设置
+
+### 开发流程
+
+1. **分支管理**:
+   - `main`: 稳定分支
+   - `dev`: 开发分支
+   - 功能分支: `feature/xxx`
+   - 修复分支: `fix/xxx`
+
+2. **提交规范**:
+   - 使用语义化提交信息
+   - 格式: `<type>: <description>`
+   - 常用类型: feat, fix, docs, refactor, test
+
+### 测试指南
+
+- **后端测试**: 编写单元测试，确保核心组件稳定性
+- **前端测试**: 组件测试 + 集成测试
+- **E2E测试**: 待实现
+
+## 最佳实践
+
+### 架构设计原则
+
+- **单一职责**: 每个模块和组件应专注于单一功能
+- **依赖注入**: 避免硬编码依赖，使用注入方式
+- **开闭原则**: 设计支持扩展而非修改
+- **接口分离**: 定义精确的小接口而非大而全的接口
+- **可测试性**: 设计便于单元测试的组件结构
+
+### 模块开发指南
+
+- **模块独立性**: 模块应尽可能独立，减少相互依赖
+- **输入验证**: 始终验证模块输入的有效性
+- **异常处理**: 合理处理异常，不允许异常传播到模块外部
+- **执行幂等性**: 模块执行应尽可能设计为幂等操作
+- **参数默认值**: 为参数提供合理的默认值，提高易用性
+
+### 前端开发指南
+
+- **组件设计**: 遵循组件化思想，合理拆分组件
+- **状态管理**: 谨慎选择状态管理方式，避免不必要的复杂性
+- **性能优化**: 注意大数据量下的渲染性能
+- **响应式设计**: 支持不同屏幕尺寸
+- **主题支持**: 考虑明暗主题切换
+
+### 测试策略
+
+- **单元测试**: 使用pytest框架，针对各组件和模块进行独立测试
+- **集成测试**: 测试模块组合和工作流执行
+- **测试覆盖率**: 核心代码应保持80%以上的测试覆盖率
+- **测试数据**: 使用固定的测试数据集，确保测试结果一致性
+- **模拟对象**: 使用mock对象隔离外部依赖
+
+### 性能优化
+
+- **延迟加载**: 按需加载模块和资源
+- **缓存策略**: 合理缓存计算结果和资源
+- **并行处理**: 支持模块并行执行优化性能
+- **内存管理**: 注意大数据处理时的内存使用
+- **性能分析**: 定期进行性能分析，识别瓶颈 
+
+# 项目开发追踪
+
+## 项目目标
+
+### 总体目标
+
+创建一个灵活、可扩展的工作流系统，使用户能够以可视化方式创建、配置和执行各种数据处理任务，无需编写复杂代码。
+
+### 阶段性目标
+
+1. **阶段一（当前）**: 
+   - 完成核心框架实现
+   - 开发基础模块集
+   - 提供基本序列化/反序列化支持
+
+2. **阶段二**:
+   - 开发Web界面
+   - 实现更多专业模块
+   - 支持工作流导入/导出
+
+3. **阶段三**:
+   - 提供云部署支持
+   - 开发团队协作功能
+   - 实现工作流市场
+
+### 应用场景
+
 - **状态管理**: 使用React Hooks管理组件状态
 - **逻辑组织**: 
   - 将UI与业务逻辑分离

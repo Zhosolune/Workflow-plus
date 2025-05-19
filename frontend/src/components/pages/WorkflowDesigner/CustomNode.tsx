@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import React, { memo, useCallback } from 'react';
+import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { ModuleType, getColorByModuleType, PortDefinitionFE, VariantDefinitionFE, ModuleDefinition } from '../../../models/moduleDefinitions';
 
 // 自定义节点数据接口
@@ -49,9 +49,25 @@ const dataTypeToShape: Record<string, React.CSSProperties> = {
 };
 
 // 自定义节点组件
-const CustomNode = ({ data, selected }: NodeProps) => {
+const CustomNode = ({ data, selected, id }: NodeProps) => {
   // 使用更安全的类型断言
   const nodeData = data as unknown as CustomNodeData;
+  const reactFlowInstance = useReactFlow();
+  
+     // 鼠标按下时立即选择节点的处理函数
+   const handleMouseDown = useCallback((event: React.MouseEvent) => {
+     // 获取当前节点并选择它
+     const node = reactFlowInstance.getNode(id);
+     if (node) {
+       // 设置当前节点为选中状态
+       reactFlowInstance.setNodes((nodes) => 
+         nodes.map((n) => ({
+           ...n,
+           selected: n.id === id,
+         }))
+       );
+     }
+   }, [id, reactFlowInstance]);
   
   // 根据模块类型获取颜色
   const getNodeColor = () => {
@@ -153,7 +169,7 @@ const CustomNode = ({ data, selected }: NodeProps) => {
 
   return (
     <div
-      className="custom-node"
+      className="custom-node nopan"
       style={{
         borderWidth: 2,
         borderStyle: 'solid',
@@ -164,6 +180,10 @@ const CustomNode = ({ data, selected }: NodeProps) => {
         backgroundColor: '#fff',
         boxShadow: selected ? '0 0 0 2px #555' : '0 2px 5px rgba(0,0,0,0.1)',
       }}
+      // 使用 onMouseDownCapture 而不是 onMouseDown
+      // 因为 ReactFlow 内部使用 d3-drag 库，该库阻止了常规的 onMouseDown 事件传播
+      // 使用 capture 阶段的事件可以在 d3-drag 处理之前捕获到事件
+      onMouseDownCapture={handleMouseDown}
     >
       {/* 输入端口 */}
       {renderInputHandles()}

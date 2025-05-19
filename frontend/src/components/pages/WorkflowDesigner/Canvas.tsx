@@ -15,6 +15,7 @@ import {
   MiniMap,
   OnNodesChange, // Added for prop type
   OnEdgesChange, // Added for prop type
+  OnSelectionChangeFunc, // 添加选择变化事件类型
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 // import { DndContext } from '@dnd-kit/core'; // Removed
@@ -77,10 +78,21 @@ const Canvas: React.FC<CanvasProps> = ({
   // 处理节点连接 - REMOVED (passed as onConnect prop)
   // const onConnect: OnConnect = useCallback(...)
   
-  // 处理节点选择 (保持不变, onNodeSelect is a prop)
+  // 处理节点选择 - 为了保持兼容性
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      onNodeSelect(node); // 修改：传递整个 node 对象，而不是 node.data
+      onNodeSelect(node); // 保留原来的节点选择逻辑，以保持兼容性
+    },
+    [onNodeSelect]
+  );
+  
+  // 处理选择变化事件
+  const onSelectionChange: OnSelectionChangeFunc = useCallback(
+    ({ nodes }) => {
+      // 当有节点被选中时，触发 onNodeSelect 回调
+      if (nodes && nodes.length === 1) {
+        onNodeSelect(nodes[0]);
+      }
     },
     [onNodeSelect]
   );
@@ -129,6 +141,7 @@ const Canvas: React.FC<CanvasProps> = ({
           onEdgesChange={onEdgesChange} // Use prop
           onConnect={onConnect} // Use prop
           onNodeClick={onNodeClick}
+          onSelectionChange={onSelectionChange}
           nodeTypes={nodeTypes}
           connectionLineType={ConnectionLineType.SmoothStep}
           snapToGrid={true}
