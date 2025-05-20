@@ -1,12 +1,9 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react'; // Removed useState
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   BackgroundVariant,
   Controls,
   Background,
-  // useNodesState, // Removed
-  // useEdgesState, // Removed
-  // addEdge, // Removed (logic moved to parent)
   Edge,
   Node,
   NodeTypes,
@@ -18,7 +15,6 @@ import {
   OnSelectionChangeFunc, // 添加选择变化事件类型
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-// import { DndContext } from '@dnd-kit/core'; // Removed
 import { useDroppable } from '@dnd-kit/core';
 import CustomNode from './CustomNode';
 
@@ -61,22 +57,13 @@ const Canvas: React.FC<CanvasProps> = ({
   moduleLibraryWidth,    
   propertyPanelWidth,    
   contentWidth
-}) => {
-  // 节点和连线状态管理 - REMOVED (managed by parent)
-  // const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  // const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  
-  // 节点计数器（用于生成唯一ID）- REMOVED
-  // const [nodeIdCounter, setNodeIdCounter] = useState(1);
-  
-  // 控制 Controls 和 MiniMap 的显示状态 (保持不变)
+}) => {  
+  // 控制 Controls 和 MiniMap 的显示状态
   const [showUiElements, setShowUiElements] = useState(true);
 
   // 使用useMemo缓存nodeTypes (保持不变)
   const nodeTypes = useMemo(() => nodeTypesProp, []);
   
-  // 处理节点连接 - REMOVED (passed as onConnect prop)
-  // const onConnect: OnConnect = useCallback(...)
   
   // 处理节点选择 - 为了保持兼容性
   const onNodeClick = useCallback(
@@ -96,9 +83,6 @@ const Canvas: React.FC<CanvasProps> = ({
     },
     [onNodeSelect]
   );
-  
-  // 监听节点和连线数量变化，更新状态 - REMOVED (logic moved to parent's handlers)
-  // useEffect(() => { ... }, [nodes.length, edges.length, updateWorkflowStatus]);
 
   // 根据可用空间判断是否显示 Controls 和 MiniMap
   useEffect(() => {
@@ -117,9 +101,6 @@ const Canvas: React.FC<CanvasProps> = ({
   const { setNodeRef } = useDroppable({
     id: 'canvas-drop-area', // This ID is used by the parent's onDragEnd handler
   });
-  
-  // 处理拖拽放置 - REMOVED (logic moved to parent's onDragEnd)
-  // const handleDrop = useCallback(...)
   
   return (
     // <DndContext onDragEnd={handleDrop}> // REMOVED DndContext wrapper
