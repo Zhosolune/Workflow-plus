@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Layout, Button, Space } from 'antd';
 import {
   PlusOutlined,
@@ -13,6 +13,7 @@ import {
 import {
   ReactFlowProvider,
   useUpdateNodeInternals, // 导入 useUpdateNodeInternals 钩子
+  ReactFlowInstance, // 添加 ReactFlowInstance 类型
 } from '@xyflow/react'; 
 
 // 从自定义Hook导入工作流管理和拖拽功能
@@ -36,6 +37,9 @@ const { Content } = Layout;
 const WorkflowDesigner: React.FC = () => {
   // 内容区域的引用，用于获取其宽度
   const contentRef = useRef<HTMLDivElement>(null);
+  
+  // 添加 ReactFlow 实例状态
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   
   // 使用自定义hook处理响应式布局
   const {
@@ -76,14 +80,15 @@ const WorkflowDesigner: React.FC = () => {
     handleDragEnd,
     handleDragCancel,
     handleModulePreview
-  } = useWorkflowDragAndDrop(
+  } = useWorkflowDragAndDrop({
     contentRef,
     setNodes,
     nodeIdCounter,
     setNodeIdCounter,
     updateWorkflowStatus,
-    setSelectedNode
-  );
+    setSelectedNode,
+    reactFlowInstance // 传递 ReactFlow 实例
+  });
   
   // 定义顶部操作按钮
   const headerActions = (
@@ -111,6 +116,11 @@ const WorkflowDesigner: React.FC = () => {
       </Button>
     </Space>
   );
+
+  // 处理 ReactFlow 实例变更
+  const handleReactFlowInstanceChange = (instance: ReactFlowInstance) => {
+    setReactFlowInstance(instance);
+  };
 
   return (
     <ReactFlowProvider>
@@ -153,6 +163,7 @@ const WorkflowDesigner: React.FC = () => {
               moduleLibraryWidth={moduleLibraryWidth} 
               propertyPanelWidth={propertyPanelWidth} 
               contentWidth={contentWidth}
+              onReactFlowInstanceChange={handleReactFlowInstanceChange}
             />
 
             {/* 模块库 */}

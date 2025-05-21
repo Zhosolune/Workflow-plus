@@ -4,7 +4,7 @@
  * 包含了工作流设计器专用的类型，扩展了现有的模型类型
  */
 
-import { Node, Edge, OnConnect, OnNodesChange, OnEdgesChange, Connection } from '@xyflow/react';
+import { Node, Edge, OnConnect, OnNodesChange, OnEdgesChange, Connection, ReactFlowInstance } from '@xyflow/react';
 import { CustomNodeData } from '../../components/pages/WorkflowDesigner/CustomNode';
 import { ModuleDefinition } from '../../models/moduleDefinitions';
 
@@ -65,6 +65,19 @@ export interface WorkflowManagerHookResult {
   setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
   setNodeIdCounter: React.Dispatch<React.SetStateAction<number>>;
   setSelectedNode: React.Dispatch<React.SetStateAction<{ data: CustomNodeData, id: string } | null>>;
+}
+
+/**
+ * 工作流拖拽Hook参数接口
+ */
+export interface WorkflowDragAndDropParams {
+  contentRef: React.RefObject<HTMLDivElement>;
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
+  nodeIdCounter: number;
+  setNodeIdCounter: React.Dispatch<React.SetStateAction<number>>;
+  updateWorkflowStatus: (status: Partial<{ saved: boolean; nodeCount: number; edgeCount: number; }>) => void;
+  setSelectedNode: React.Dispatch<React.SetStateAction<{ data: CustomNodeData, id: string } | null>>;
+  reactFlowInstance: ReactFlowInstance | null;
 }
 
 /**

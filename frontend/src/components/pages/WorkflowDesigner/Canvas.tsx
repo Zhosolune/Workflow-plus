@@ -13,6 +13,8 @@ import {
   OnNodesChange, // Added for prop type
   OnEdgesChange, // Added for prop type
   OnSelectionChangeFunc, // 添加选择变化事件类型
+  ReactFlowInstance, // 添加ReactFlowInstance类型
+  useReactFlow, // 添加useReactFlow钩子
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useDroppable } from '@dnd-kit/core';
@@ -40,6 +42,8 @@ interface CanvasProps {
   moduleLibraryWidth: number; 
   propertyPanelWidth: number; 
   contentWidth: number;
+  // 添加React Flow实例回调
+  onReactFlowInstanceChange?: (instance: ReactFlowInstance) => void;
 }
 
 /**
@@ -56,14 +60,14 @@ const Canvas: React.FC<CanvasProps> = ({
   updateWorkflowStatus, // Still used for node click selection if needed, or by parent
   moduleLibraryWidth,    
   propertyPanelWidth,    
-  contentWidth
+  contentWidth,
+  onReactFlowInstanceChange // 添加React Flow实例回调
 }) => {  
   // 控制 Controls 和 MiniMap 的显示状态
   const [showUiElements, setShowUiElements] = useState(true);
 
   // 使用useMemo缓存nodeTypes (保持不变)
   const nodeTypes = useMemo(() => nodeTypesProp, []);
-  
   
   // 处理节点选择 - 为了保持兼容性
   const onNodeClick = useCallback(
@@ -82,6 +86,16 @@ const Canvas: React.FC<CanvasProps> = ({
       }
     },
     [onNodeSelect]
+  );
+
+  // 处理实例加载
+  const onInit = useCallback(
+    (instance: ReactFlowInstance) => {
+      if (onReactFlowInstanceChange) {
+        onReactFlowInstanceChange(instance);
+      }
+    },
+    [onReactFlowInstanceChange]
   );
 
   // 根据可用空间判断是否显示 Controls 和 MiniMap
@@ -127,6 +141,7 @@ const Canvas: React.FC<CanvasProps> = ({
           connectionLineType={ConnectionLineType.SmoothStep}
           snapToGrid={true}
           snapGrid={[15, 15]}
+          onInit={onInit} // 添加onInit回调
         >
           <Background 
             variant={BackgroundVariant.Dots} 

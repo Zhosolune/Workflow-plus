@@ -9,9 +9,9 @@ import {
   DragStartEvent, 
   DragEndEvent,
 } from '@dnd-kit/core';
-import { Node } from '@xyflow/react';
+import { Node, ReactFlowInstance } from '@xyflow/react';
 import { ModuleDefinition } from '../../../models/moduleDefinitions';
-import { DragStartInfo, WorkflowDragAndDropHookResult } from '../types';
+import { DragStartInfo, WorkflowDragAndDropHookResult, WorkflowDragAndDropParams } from '../types';
 import { fetchModuleVariantDefinitions } from '../services/moduleService';
 import { generateNodeId } from '../utils/workflowUtils';
 import { CustomNodeData } from '../../../components/pages/WorkflowDesigner/CustomNode';
@@ -23,22 +23,22 @@ const NODE_DEFAULT_HEIGHT = 100;  // 预估的节点高度
 /**
  * 工作流拖拽Hook
  * 
- * @param contentRef 内容区域引用
- * @param setNodes 设置节点的函数
- * @param nodeIdCounter 节点ID计数器
- * @param setNodeIdCounter 设置节点ID计数器的函数
- * @param updateWorkflowStatus 更新工作流状态的函数
- * @param setSelectedNode 设置选中节点的函数
+ * @param params Hook参数对象，包含内容区域引用、节点操作函数等
  * @returns 拖拽状态和处理函数
  */
 export const useWorkflowDragAndDrop = (
-  contentRef: React.RefObject<HTMLDivElement>,
-  setNodes: React.Dispatch<React.SetStateAction<Node[]>>,
-  nodeIdCounter: number,
-  setNodeIdCounter: React.Dispatch<React.SetStateAction<number>>,
-  updateWorkflowStatus: (status: Partial<{ saved: boolean; nodeCount: number; edgeCount: number; }>) => void,
-  setSelectedNode: React.Dispatch<React.SetStateAction<{ data: CustomNodeData, id: string } | null>>
+  params: WorkflowDragAndDropParams
 ): WorkflowDragAndDropHookResult => {
+  const { 
+    contentRef, 
+    setNodes, 
+    nodeIdCounter, 
+    setNodeIdCounter, 
+    updateWorkflowStatus, 
+    setSelectedNode,
+    reactFlowInstance 
+  } = params;
+
   // 当前拖拽的模块
   const [draggedModule, setDraggedModule] = useState<ModuleDefinition | null>(null);
   
@@ -158,6 +158,39 @@ export const useWorkflowDragAndDrop = (
   }, [setSelectedNode]);
   
   /**
+   * 将屏幕坐标转换为流图坐标
+   * @param screenX 屏幕X坐标
+   * @param screenY 屏幕Y坐标
+   * @returns 流图坐标
+   */
+  const screenToFlowPosition = useCallback((screenX: number, screenY: number) => {
+    if (!reactFlowInstance) {
+      // 如果没有实例，回退到旧的计算方法
+      const canvasElement = contentRef.current?.querySelector('.react-flow');
+      if (!canvasElement) return { x: 0, y: 0 };
+      
+      const canvasRect = canvasElement.getBoundingClientRect();
+      return {
+        x: (screenX - canvasRect.left + canvasElement.scrollLeft) - (NODE_DEFAULT_WIDTH / 2),
+        y: (screenY - canvasRect.top + canvasElement.scrollTop) - (NODE_DEFAULT_HEIGHT / 2),
+      };
+    }
+
+    // 使用ReactFlow的screenToFlowPosition方法将屏幕坐标转换为流图坐标
+    // 这会考虑当前的平移和缩放状态
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: screenX,
+      y: screenY,
+    });
+
+    // 调整位置，使节点中心对齐鼠标位置
+    return {
+      x: position.x - NODE_DEFAULT_WIDTH / 2,
+      y: position.y - NODE_DEFAULT_HEIGHT / 2,
+    };
+  }, [reactFlowInstance, contentRef]);
+  
+  /**
    * 处理从模块库拖拽到画布的操作
    * @param event 拖拽结束事件
    */
@@ -215,20 +248,12 @@ export const useWorkflowDragAndDrop = (
       if (over && over.id === 'canvas-drop-area') {
         const moduleData = active.data.current as any; // Re-alias for clarity
 
-        const canvasElement = contentRef.current?.querySelector('.react-flow');
-        if (!canvasElement) return;
-
-        // 使用最后记录的鼠标位置，而不是开始时的位置
+        // 使用最后记录的鼠标位置
         const pointerClientX = clientX;
         const pointerClientY = clientY;
 
-        const canvasRect = canvasElement.getBoundingClientRect();
-        
-        // 计算节点位置，需要从鼠标位置减去节点一半的宽度和高度，以便使节点中心对齐鼠标位置
-        const position = {
-          x: (pointerClientX - canvasRect.left + canvasElement.scrollLeft) - (NODE_DEFAULT_WIDTH / 2),
-          y: (pointerClientY - canvasRect.top + canvasElement.scrollTop) - (NODE_DEFAULT_HEIGHT / 2),
-        };
+        // 计算节点位置，考虑画布的变换（平移和缩放）
+        const position = screenToFlowPosition(pointerClientX, pointerClientY);
 
         // 获取变体定义
         const availableVariants = await fetchModuleVariantDefinitions(moduleData.id);
@@ -273,7 +298,7 @@ export const useWorkflowDragAndDrop = (
         setNodeIdCounter((prev) => prev + 1);
       }
     },
-    [nodeIdCounter, setNodes, setNodeIdCounter, updateWorkflowStatus, contentRef, handleModulePreview, setSelectedNode]
+    [nodeIdCounter, setNodes, setNodeIdCounter, updateWorkflowStatus, screenToFlowPosition, handleModulePreview, setSelectedNode]
   );
   
   return {
