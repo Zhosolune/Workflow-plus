@@ -10,6 +10,7 @@
     - `ModuleRegistry`: 负责模块类型的注册和实例化。
     - `Workflow`: 管理工作流中的模块及其连接。
     - `WorkflowEngine`: 负责工作流的执行、控制和状态管理。
+- **API接口**: 后端通过 `API_backend_interaction.md` 中定义的API与前端进行交互。
 
 ## 2. 模块 (Module) 开发
 
@@ -93,7 +94,7 @@
     - `create_instance(module_name: str, *args: Any, **kwargs: Any) -> Optional[BaseModule]`:
         根据已注册的模块类名创建模块实例。
         - `module_name`: 模块的类名 (如 "MyCustomModule")。
-        - `**kwargs` 可以包括 `name` (实例名), `description`, `initial_variant_id`, `initial_ports_config` 等传递给 `BaseModule` 构造函数的参数。
+        - `**kwargs` 可以包括 `id` (实例ID,来自前端节点的instanceId), `name` (实例名), `description`, `initial_variant_id`, `initial_ports_config`, `properties` (模块特定参数) 等传递给 `BaseModule` 构造函数的参数。
 - **获取模块变体详情**:
     - `get_module_variant_details(module_name: str) -> Optional[Dict[str, VariantDefinition]]`:
         获取指定模块类型支持的所有变体定义及其端口定义。调用模块类的 `_get_variant_definitions()` 方法。
@@ -147,11 +148,11 @@
 工作流可以保存到JSON文件并在之后加载回来。
 
 - `to_dict() -> Dict[str, Any]`: 将整个工作流（包括模块和连接）转换为字典结构。
-    - 模块通过其 `to_dict()` 方法序列化，其中包含 `module_type` (类名), `current_variant_id`, 和 `current_ports_config`。
+    - 模块通过其 `to_dict()` 方法序列化，其中包含 `module_type` (类名), `id` (实例ID), `name` (实例名), `description`, `current_variant_id`, `current_ports_config`, `properties` (模块参数), `position`。
 - `save(filepath: str) -> None`: 将 `to_dict()` 的结果保存为JSON文件。
 - `load(cls, filepath: str, module_registry_instance: ModuleRegistry) -> 'Workflow'`:
     从JSON文件加载工作流。
-    - 需要一个 `ModuleRegistry` 实例用于根据模块的 `module_type` (类名) 和其他保存的属性 (如 `name`, `description`, `initial_variant_id`, `initial_ports_config`) 来重新创建模块实例。
+    - 需要一个 `ModuleRegistry` 实例用于根据模块的 `module_type` (类名) 和其他保存的属性 (如 `id` (实例ID), `name`, `description`, `initial_variant_id`, `initial_ports_config`, `properties`, `position`) 来重新创建模块实例。
     - 加载模块后，再根据保存的连接信息调用 `workflow.connect()` 方法重建连接。
 
 ## 4. 工作流执行引擎 (`WorkflowEngine` - `backend/core/engine.py`)
@@ -178,7 +179,8 @@
 ### 4.2. 工作流生命周期管理
 
 - `create_workflow(name: str, description: str = "") -> Workflow`: 创建一个新的空工作流并加载到引擎。
-- `load_workflow(filepath: str) -> Workflow`: 从文件加载工作流到引擎。
+- `load_workflow_from_file(filepath: str) -> Workflow`: (重命名或区分) 从文件加载工作流到引擎。
+- `load_workflow_from_data(workflow_data: Dict[str, Any]) -> Workflow`: (新增) 从前端提供的字典数据动态构建并加载工作流到引擎。
 - `close_workflow(workflow_id: str) -> bool`: 从引擎中关闭（移除）一个工作流。如果工作流正在执行，则不允许关闭。
 - `set_current_workflow(workflow_id: str) -> bool`: 设置当前活动工作流。如果引擎正在执行，不允许切换。
 
@@ -248,54 +250,29 @@
     *   获取全局模块注册表实例: `from backend.core.module_registry import gmodule_registry`。
     *   调用 `gmodule_registry.register(MyNewModuleClass, category="MyCategory")`。
 
-3.  **创建/加载工作流实例**:
-    *   初始化引擎: `engine = WorkflowEngine(gmodule_registry)`。
-    *   创建新工作流: `workflow = engine.create_workflow("MyDataProcessingFlow", "Processes raw data.")`。
-    *   或者加载已有工作流: `workflow = engine.load_workflow("path/to/my_flow.json")`。
-    *   设置其为当前工作流: `engine.set_current_workflow(workflow.id)` (如果不是通过 `create` 或 `load` 自动设置的话)。
+3.  **创建/加载工作流实例 (通过API)**:
+    *   前端通过调用 `/api/workflow/save` (传递节点和边数据) 或 `/api/workflow/load/{workflow_id}` 与后端交互。
+    *   后端API端点内部会使用 `WorkflowEngine` 和 `Workflow` 类的方法来创建、加载、保存工作流。
+    *   例如，`/api/workflow/save` 接口的后端逻辑会:
+        *   接收前端JSON数据。
+        *   创建一个 `Workflow` 实例。
+        *   遍历节点数据，使用 `gmodule_registry.create_instance(module_type, id=node_instance_id, name=node_name, initial_variant_id=..., initial_ports_config=..., properties=...)` 创建模块。
+        *   将模块添加到工作流中。
+        *   遍历边数据，使用 `workflow.connect(source_module_id, source_port_name, target_module_id, target_port_name)` 连接模块。
+        *   调用 `workflow.save()`。
 
-4.  **搭建工作流图**:
-    *   **创建模块实例**: 使用 `gmodule_registry.create_instance()` 创建模块类的实例。
-        ```python
-        reader_module = gmodule_registry.create_instance(
-            "FileReaderModule", 
-            name="Input Data Reader",
-            initial_variant_id="csv_reader", # 假设 FileReaderModule 有一个名为 csv_reader 的变体
-            initial_ports_config={"error_output": False} # 假设 error_output 是一个可选端口
-        )
-        processor_module = gmodule_registry.create_instance("DataProcessorModule", name="Data Processor")
-        ```
-    *   **添加模块到工作流**:
-        ```python
-        workflow.add_module(reader_module)
-        workflow.add_module(processor_module)
-        ```
-    *   **设置模块参数** (如果模块需要):
-        ```python
-        reader_module.set_parameter("filepath", "/data/input.csv")
-        ```
-    *   **连接模块端口**: 使用模块ID和**端口名称**。
-        ```python
-        # 假设 reader_module 的 "csv_reader" 变体有一个名为 "file_content" 的输出端口
-        # 假设 processor_module 有一个名为 "raw_data" 的输入端口
-        workflow.connect(
-            reader_module.id, "file_content", 
-            processor_module.id, "raw_data"
-        )
-        ```
-    *   (可选) **保存工作流**: `workflow.save("path/to/my_flow.json")`。
+4.  **搭建工作流图 (主要由前端完成，后端通过API接收)**:
+    *   前端用户在UI上拖拽模块、配置参数和变体、连接端口。
+    *   这些操作在前端会更新 `nodes` 和 `edges` 状态。
+    *   当用户点击"保存"时，前端将这些状态数据发送到后端的 `/api/workflow/save`。
 
-5.  **执行工作流**:
-    *   (可选) **注册进度回调**:
-        ```python
-        def my_progress_handler(event_type, event_data):
-            print(f"Event: {event_type}, Data: {event_data}")
-        engine.register_progress_callback(my_progress_handler)
-        ```
-    *   **启动执行**: `engine.execute(workflow.id, async_run=True)`。
-    *   **获取结果**: 执行完成后 (如果是同步执行或异步执行完毕后)，可以通过 `engine.execution_results` 访问每个模块的输出。
+5.  **执行工作流 (通过API)**:
+    *   前端用户点击"运行"按钮。
+    *   前端调用 `/api/workflow/execute`，可以传递已保存工作流的ID，或者直接传递当前画布的工作流数据。
+    *   后端API端点将请求转发给 `WorkflowEngine.execute()`。
+    *   前端通过轮询 `/api/workflow/status/{execution_id}` 或 WebSocket 接收执行状态和结果。
 
-6.  **控制执行** (主要用于异步执行):
+6.  **控制执行** (主要用于异步执行, 未来可能通过API暴露):
     *   `engine.pause()`
     *   `engine.resume()`
     *   `engine.stop()`
@@ -304,9 +281,224 @@
 
 - **端口名称**: 在模块的 `execute` 方法、工作流连接 (`workflow.connect`) 以及引擎的数据传递 (`_get_source_data`) 中，都强依赖于**端口名称**。确保端口名称在模块变体定义中准确无误，并在 `execute` 方法中正确使用。
 - **模块变体管理**: 当模块的变体被切换时 (`module.set_variant()`)，`_apply_active_variant_and_config()` 会重建端口。`Workflow.handle_module_variant_change()` 会负责移除因端口不再存在而失效的连接。
-- **序列化**: 模块的 `module_type` (类名), `current_variant_id`, 和 `current_ports_config` 都会被序列化，确保模块在加载时能够正确恢复其配置。
-- **错误处理**: 引擎和模块都有自己的错误状态和信息。模块执行中的异常会被捕获并传播到引擎层面。
+- **序列化**: 模块的 `module_type` (类名), `id` (实例ID), `name` (实例名), `description`, `current_variant_id`, `current_ports_config`, `properties` (参数), `position` 都会被序列化，确保模块在加载时能够正确恢复其配置。
+- **错误处理**: 引擎和模块都有自己的错误状态和信息。模块执行中的异常会被捕获并传播到引擎层面。API层面也应有统一的错误处理。
 - **线程安全**: 异步执行在单独线程中运行。如果模块本身或回调函数访问共享资源，需要考虑线程安全问题。
 - **日志**: `WorkflowEngine` 使用 `glogger` (标准 `logging` 模块的实例) 进行日志记录。
 - **`BaseModule._get_variant_definitions`**: 此方法是**类方法**。子类必须实现它以定义其支持的变体。
-- **`any` 数据类型**: 端口类型可以定义为 "any"，这在 `Workflow.connect` 进行类型兼容性检查时会被特殊处理，允许连接到任何其他类型的端口。 
+- **`any` 数据类型**: 端口类型可以定义为 "any"，这在 `Workflow.connect` 进行类型兼容性检查时会被特殊处理，允许连接到任何其他类型的端口。
+
+## 7. API 服务封装 (示例, e.g., using FastAPI)
+
+```python
+# main.py (FastAPI 示例)
+from fastapi import FastAPI, HTTPException, Path, Body
+from typing import Dict, Any, List
+from backend.core.engine import WorkflowEngine
+from backend.core.module_registry import gmodule_registry # 假设全局注册表
+from backend.core.workflow import Workflow
+
+app = FastAPI()
+engine = WorkflowEngine(gmodule_registry)
+
+# --- 辅助函数 (简单示例) ---
+def _workflow_to_frontend_dict(wf: Workflow) -> Dict[str, Any]:
+    # 将 Workflow 对象转换为前端期望的加载格式
+    # 注意: 这只是一个示意，实际转换逻辑会更复杂
+    # 需要确保节点数据包含 currentVariantId, activePortsConfig, properties, position 等
+    # 边数据包含 sourceHandle, targetHandle
+    wf_dict = wf.to_dict() # 假设 wf.to_dict() 返回了大部分所需信息
+    # 可能需要进一步处理 wf_dict["modules"] 和 wf_dict["connections"]
+    # 以完全匹配前端API_backend_interaction.md中定义的加载响应格式
+    return {
+        "id": wf.id,
+        "name": wf.name,
+        "description": wf.description,
+        "nodes": [m.to_dict() for m in wf.modules.values()], # 需要确保模块to_dict()符合前端期望
+        "edges": [c.to_dict() for c in wf.connections.values()] # 需要确保连接to_dict()符合前端期望
+    }
+
+# --- API 端点 --- 
+
+@app.post("/api/workflow/save")
+async def save_workflow_endpoint(payload: Dict[str, Any] = Body(...)):
+    try:
+        workflow_name = payload.get("name", "Untitled Workflow")
+        workflow_description = payload.get("description", "")
+        nodes_data = payload.get("nodes", [])
+        edges_data = payload.get("edges", [])
+
+        wf = Workflow(name=workflow_name, description=workflow_description)
+
+        for node_payload in nodes_data:
+            module_type = node_payload.get("type")
+            instance_id = node_payload.get("id")
+            position = node_payload.get("position")
+            node_inner_data = node_payload.get("data", {})
+            
+            module_instance = gmodule_registry.create_instance(
+                module_type,
+                id=instance_id, # 传递实例ID
+                name=node_inner_data.get("name"),
+                description=node_inner_data.get("description"),
+                initial_variant_id=node_inner_data.get("currentVariantId"),
+                initial_ports_config=node_inner_data.get("activePortsConfig"),
+                properties=node_inner_data.get("properties", {}),
+                position=(position.get("x"), position.get("y")) if position else (0,0)
+            )
+            if not module_instance:
+                raise HTTPException(status_code=400, detail=f"无法创建模块: {module_type}")
+            wf.add_module(module_instance)
+
+        for edge_payload in edges_data:
+            wf.connect(
+                source_module_id=edge_payload.get("source"),
+                source_port_name=edge_payload.get("sourceHandle"),
+                target_module_id=edge_payload.get("target"),
+                target_port_name=edge_payload.get("targetHandle")
+            )
+        
+        # 假设保存到文件，文件名用工作流ID
+        save_path = f"./{wf.id}.json" 
+        wf.save(save_path)
+        return {"message": "工作流保存成功", "workflowId": wf.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/workflow/load/{workflow_id}")
+async def load_workflow_endpoint(workflow_id: str = Path(...)):
+    try:
+        # 假设从文件加载
+        load_path = f"./{workflow_id}.json"
+        wf = Workflow.load(load_path, gmodule_registry)
+        engine.load_workflow_from_object(wf) # 将加载的工作流对象加入引擎管理
+        return _workflow_to_frontend_dict(wf)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"工作流 {workflow_id} 未找到")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/modules/definitions")
+async def get_module_definitions_endpoint():
+    defs = []
+    for name, data in gmodule_registry.get_registered_modules().items():
+        # 假设模块类有静态属性或方法来提供这些信息
+        module_class = data["class"]
+        defs.append({
+            "id": name, # 使用类名作为ID
+            "name": getattr(module_class, "display_name", name), # 尝试获取 display_name
+            "icon": getattr(module_class, "icon", "❓"),
+            "type": data["category"].lower(), # 使用小写分类作为 type
+            "description": module_class.__doc__.splitlines()[0] if module_class.__doc__ else "",
+            "category": data["category"]
+        })
+    return defs
+
+@app.get("/api/modules/{module_type_id}/variants")
+async def get_module_variants_endpoint(module_type_id: str = Path(...)):
+    variants = gmodule_registry.get_module_variant_details(module_type_id)
+    if not variants:
+        raise HTTPException(status_code=404, detail=f"模块类型 {module_type_id} 的变体未找到或未定义")
+    # VariantDefinition 和 PortDefinition 已经是 dataclass，可以直接序列化为JSON
+    # 需要确保其字段名与前端 API_backend_interaction.md 中定义的响应格式一致
+    return list(variants.values()) 
+
+@app.post("/api/workflow/execute")
+async def execute_workflow_endpoint(payload: Dict[str, Any] = Body(...)):
+    workflow_id = payload.get("workflowId")
+    workflow_data = payload.get("workflowData")
+    async_run = payload.get("asyncRun", True)
+    
+    current_wf = None
+    if workflow_id:
+        current_wf = engine.get_workflow(workflow_id) # 假设 engine 有 get_workflow 方法
+        if not current_wf:
+             # 尝试从文件加载并放入引擎
+            try:
+                load_path = f"./{workflow_id}.json"
+                current_wf = Workflow.load(load_path, gmodule_registry)
+                engine.load_workflow_from_object(current_wf) 
+            except FileNotFoundError:
+                raise HTTPException(status_code=404, detail=f"工作流 {workflow_id} 未找到")
+    elif workflow_data:
+        # 此处逻辑类似 /api/workflow/save 中的构建逻辑，但不保存文件
+        # 而是动态创建一个 Workflow 对象并加载到引擎
+        try:
+            wf_name = workflow_data.get("name", "Dynamic Workflow")
+            wf_desc = workflow_data.get("description", "")
+            nodes_data = workflow_data.get("nodes", [])
+            edges_data = workflow_data.get("edges", [])
+
+            current_wf = Workflow(name=wf_name, description=wf_desc)
+            for node_payload in nodes_data:
+                # ... (省略与save接口中类似的模块创建逻辑) ...
+                module_type = node_payload.get("type")
+                instance_id = node_payload.get("id")
+                position = node_payload.get("position")
+                node_inner_data = node_payload.get("data", {})
+                module_instance = gmodule_registry.create_instance(module_type, id=instance_id, name=node_inner_data.get("name"), initial_variant_id=node_inner_data.get("currentVariantId"), initial_ports_config=node_inner_data.get("activePortsConfig"), properties=node_inner_data.get("properties", {}), position=(position.get("x"), position.get("y")) if position else (0,0))
+                if not module_instance: raise HTTPException(status_code=400, detail=f"无法创建模块: {module_type}")
+                current_wf.add_module(module_instance)
+            for edge_payload in edges_data:
+                current_wf.connect(source_module_id=edge_payload.get("source"), source_port_name=edge_payload.get("sourceHandle"), target_module_id=edge_payload.get("target"), target_port_name=edge_payload.get("targetHandle"))
+            
+            engine.load_workflow_from_object(current_wf) # 加载到引擎
+            workflow_id = current_wf.id # 使用动态生成的ID
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"构建动态工作流失败: {str(e)}")
+    else:
+        raise HTTPException(status_code=400, detail="必须提供 workflowId 或 workflowData")
+
+    if not current_wf:
+         raise HTTPException(status_code=404, detail="无法确定要执行的工作流")
+
+    success = engine.execute(current_wf.id, async_run=async_run)
+    if not success:
+        raise HTTPException(status_code=500, detail=f"工作流 {current_wf.id} 执行失败: {engine.error_message}")
+
+    response_data = {
+        "message": f"工作流 {current_wf.id} {'异步' if async_run else '同步'}执行已启动" if success else "执行失败",
+        "executionId": current_wf.id if async_run else None, # 简单起见，异步执行ID用工作流ID
+        "status": engine.execution_status
+    }
+    if not async_run and engine.execution_status == engine.ExecutionStatus.COMPLETED:
+        response_data["results"] = engine.execution_results
+    
+    return response_data
+
+@app.get("/api/workflow/status/{execution_id}")
+async def get_workflow_status_endpoint(execution_id: str = Path(...)):
+    # 简单示例，实际中 execution_id 可能需要更复杂的管理
+    wf = engine.get_workflow(execution_id)
+    if not wf:
+        raise HTTPException(status_code=404, detail=f"执行ID {execution_id} 未找到或不对应任何活动工作流")
+
+    # 获取模块状态的逻辑需要从WorkflowEngine中细化
+    # 以下为伪代码，具体实现依赖 WorkflowEngine 的设计
+    module_statuses = []
+    if wf.id in engine.execution_results: # 假设 execution_results 存储了最后一次执行的信息
+        for module_id, module_instance in wf.modules.items():
+            module_outputs = engine.execution_results.get(wf.id, {}).get(module_id, {})
+            module_statuses.append({
+                "moduleId": module_id,
+                "moduleName": module_instance.name,
+                "status": module_instance.execution_status, # 假设BaseModule有此属性
+                "outputs": module_outputs # 或部分预览
+            })
+    
+    return {
+        "executionId": execution_id,
+        "workflowId": wf.id,
+        "status": engine.execution_status, # 引擎的整体状态
+        "modulesStatus": module_statuses
+    }
+
+# 注意: 注册模块的示例代码应该在后端项目初始化时执行
+# from backend.core.example_modules import FileReaderModule, DataProcessorModule # 假设有这些模块
+# gmodule_registry.register(FileReaderModule, category="数据源")
+# gmodule_registry.register(DataProcessorModule, category="数据处理")
+
+# 要运行此示例: uvicorn main:app --reload
+```
+
+**最近更新**: 2025-05-21 

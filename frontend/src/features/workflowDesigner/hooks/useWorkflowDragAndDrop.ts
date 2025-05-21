@@ -59,7 +59,6 @@ export const useWorkflowDragAndDrop = (
    * @param moduleDefinition 模块定义
    */
   const handleModulePreview = useCallback(async (moduleDefinition: ModuleDefinition) => {
-    console.log('Previewing module:', moduleDefinition.name);
 
     // 1. 获取变体定义
     const availableVariants = await fetchModuleVariantDefinitions(moduleDefinition.id);
@@ -296,8 +295,18 @@ export const useWorkflowDragAndDrop = (
           type: 'customNode',
           position,
           data: newNodeData,
+          selected: true, // 添加selected属性，使新节点自动处于选中状态
         };
 
+        // 先取消所有现有节点的选中状态
+        setNodes((nds) => {
+          return nds.map(node => ({
+            ...node,
+            selected: false
+          }));
+        });
+
+        // 然后添加新节点
         setNodes((nds) => {
           const newNodes = [...nds, newNode];
           updateWorkflowStatus({ nodeCount: newNodes.length, saved: false });

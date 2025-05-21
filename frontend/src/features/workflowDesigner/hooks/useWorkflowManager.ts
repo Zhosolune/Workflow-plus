@@ -57,12 +57,9 @@ export const useWorkflowManager = (): WorkflowManagerHookResult => {
    * @param node 被选中的节点数据
    */
   const handleNodeSelect = useCallback((node: Node) => {
-    console.log('WorkflowDesigner: handleNodeSelect triggered. Node:', node);
     if (node && node.data) {
-      console.log('WorkflowDesigner: node.data:', node.data);
       setSelectedNode({ data: node.data as CustomNodeData, id: node.id });
     } else {
-      console.warn('WorkflowDesigner: handleNodeSelect called with invalid node or node.data. Node:', node);
       // 可以选择不更新 selectedNode 或设置为 null，以避免下游错误
       // setSelectedNode(null); 
     }
@@ -115,7 +112,6 @@ export const useWorkflowManager = (): WorkflowManagerHookResult => {
    * @param newNodeData 更新的部分节点数据
    */
   const onNodeDataChange = useCallback((nodeId: string, newNodeData: Partial<CustomNodeData>) => {
-    console.log(`WorkflowDesigner: onNodeDataChange called for nodeId: ${nodeId}`, newNodeData);
     
     // 检查是否是变体或端口配置变更
     const isVariantOrPortChange = 

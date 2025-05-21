@@ -1268,5 +1268,5 @@ const deserializeWorkflow = (json: string): { nodes: Node[], edges: Edge[] } => 
 
 ## 版本记录
 
-**当前版本**: 0.1.3
-**最近更新**: 2024-05-20 
+**当前版本**: 0.1.4
+**最近更新**: 2025-05-21 

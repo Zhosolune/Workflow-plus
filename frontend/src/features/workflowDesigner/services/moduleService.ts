@@ -13,7 +13,6 @@ import { VariantDefinitionFE } from '../../../models/moduleDefinitions';
  * @returns 模块变体定义列表或null
  */
 export const fetchModuleVariantDefinitions = async (moduleTypeOrId: string): Promise<VariantDefinitionFE[] | null> => {
-  console.log(`Fetching variant definitions for module type/ID: ${moduleTypeOrId}`);
   // 基于 moduleTypeOrId 返回模拟数据
   // 在实际应用中，这里会是一个真实的API请求
   
