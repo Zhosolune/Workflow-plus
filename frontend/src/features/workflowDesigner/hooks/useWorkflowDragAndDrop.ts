@@ -55,66 +55,6 @@ export const useWorkflowDragAndDrop = (
   }, []);
   
   /**
-   * 处理拖拽开始事件
-   * @param event 拖拽开始事件
-   */
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const { active, activatorEvent } = event;
-    if (active && active.data && active.data.current && 'id' in active.data.current && 'name' in active.data.current) {
-      setDraggedModule(active.data.current as ModuleDefinition);
-      
-      // 记录拖拽起始信息
-      if (activatorEvent instanceof MouseEvent || activatorEvent instanceof TouchEvent) {
-        const clientX = activatorEvent instanceof MouseEvent ? activatorEvent.clientX : activatorEvent.touches[0].clientX;
-        const clientY = activatorEvent instanceof MouseEvent ? activatorEvent.clientY : activatorEvent.touches[0].clientY;
-        
-        // 添加鼠标移动事件监听器
-        const handleMouseMove = (e: MouseEvent) => {
-          updateMousePosition(e.clientX, e.clientY);
-        };
-        
-        const handleTouchMove = (e: TouchEvent) => {
-          if (e.touches.length > 0) {
-            updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
-          }
-        };
-        
-        // 添加事件监听器
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('touchmove', handleTouchMove);
-        
-        dragStartRef.current = {
-          x: clientX,
-          y: clientY,
-          time: Date.now(),
-          targetId: active.id.toString(), // 假设 active.id 可以转为 string
-          lastPosition: { x: clientX, y: clientY }, // 初始位置与开始位置相同
-          cleanupFunctions: [
-            () => document.removeEventListener('mousemove', handleMouseMove),
-            () => document.removeEventListener('touchmove', handleTouchMove)
-          ]
-        };
-      }
-    } else {
-      setDraggedModule(null);
-      dragStartRef.current = null;
-    }
-  }, [updateMousePosition]);
-  
-  /**
-   * 处理拖拽取消事件
-   */
-  const handleDragCancel = useCallback(() => {
-    // 移除所有事件监听器
-    if (dragStartRef.current && dragStartRef.current.cleanupFunctions) {
-      dragStartRef.current.cleanupFunctions.forEach(cleanup => cleanup());
-    }
-    
-    setDraggedModule(null);
-    dragStartRef.current = null;
-  }, []);
-  
-  /**
    * 处理模块库模块点击预览
    * @param moduleDefinition 模块定义
    */
@@ -156,6 +96,71 @@ export const useWorkflowDragAndDrop = (
     // 3. 更新 selectedNode 状态
     setSelectedNode({ data: previewNodeData, id: previewNodeData.id });
   }, [setSelectedNode]);
+  
+  /**
+   * 处理拖拽开始事件
+   * @param event 拖拽开始事件
+   */
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active, activatorEvent } = event;
+    if (active && active.data && active.data.current && 'id' in active.data.current && 'name' in active.data.current) {
+      const moduleData = active.data.current as ModuleDefinition;
+      setDraggedModule(moduleData);
+      
+      // 新增：在开始拖拽时预览模块
+      handleModulePreview(moduleData);
+      
+      // 记录拖拽起始信息
+      if (activatorEvent instanceof MouseEvent || activatorEvent instanceof TouchEvent) {
+        const clientX = activatorEvent instanceof MouseEvent ? activatorEvent.clientX : activatorEvent.touches[0].clientX;
+        const clientY = activatorEvent instanceof MouseEvent ? activatorEvent.clientY : activatorEvent.touches[0].clientY;
+        
+        // 添加鼠标移动事件监听器
+        const handleMouseMove = (e: MouseEvent) => {
+          updateMousePosition(e.clientX, e.clientY);
+        };
+        
+        const handleTouchMove = (e: TouchEvent) => {
+          if (e.touches.length > 0) {
+            updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        };
+        
+        // 添加事件监听器
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('touchmove', handleTouchMove);
+        
+        dragStartRef.current = {
+          x: clientX,
+          y: clientY,
+          time: Date.now(),
+          targetId: active.id.toString(), // 假设 active.id 可以转为 string
+          lastPosition: { x: clientX, y: clientY }, // 初始位置与开始位置相同
+          cleanupFunctions: [
+            () => document.removeEventListener('mousemove', handleMouseMove),
+            () => document.removeEventListener('touchmove', handleTouchMove)
+          ],
+          previewShown: true // 记录已经显示了预览
+        };
+      }
+    } else {
+      setDraggedModule(null);
+      dragStartRef.current = null;
+    }
+  }, [updateMousePosition, handleModulePreview]);
+  
+  /**
+   * 处理拖拽取消事件
+   */
+  const handleDragCancel = useCallback(() => {
+    // 移除所有事件监听器
+    if (dragStartRef.current && dragStartRef.current.cleanupFunctions) {
+      dragStartRef.current.cleanupFunctions.forEach(cleanup => cleanup());
+    }
+    
+    setDraggedModule(null);
+    dragStartRef.current = null;
+  }, []);
   
   /**
    * 将屏幕坐标转换为流图坐标
@@ -240,7 +245,10 @@ export const useWorkflowDragAndDrop = (
       ) {
         // 判断为点击模块库中的模块
         console.log('Detected click on module library item:', moduleDataFromDrag.name);
-        handleModulePreview(moduleDataFromDrag);
+        // 如果在拖拽开始时已经显示了预览，则不需要再次调用
+        if (!dragStartData.previewShown) {
+          handleModulePreview(moduleDataFromDrag);
+        }
         return; // 点击后不添加到画布
       }
 
@@ -296,6 +304,9 @@ export const useWorkflowDragAndDrop = (
           return newNodes;
         });
         setNodeIdCounter((prev) => prev + 1);
+        
+        // 新增：选中新添加的节点
+        setSelectedNode({ data: newNodeData as CustomNodeData, id: newNodeId });
       }
     },
     [nodeIdCounter, setNodes, setNodeIdCounter, updateWorkflowStatus, screenToFlowPosition, handleModulePreview, setSelectedNode]

@@ -27,6 +27,7 @@ export interface DragStartInfo {
   targetId: string | null;
   cleanupFunctions?: (() => void)[];  // 添加清理函数数组，用于清理事件监听器
   lastPosition?: { x: number, y: number }; // 最后记录的鼠标位置
+  previewShown?: boolean; // 是否已经显示了模块预览
 }
 
 /**
