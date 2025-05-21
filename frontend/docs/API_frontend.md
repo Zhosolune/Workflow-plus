@@ -25,6 +25,8 @@
   - [useWindowResizeBreakpoint](#usewindowresizebreakpoint)
   - [useWindowSizeTracker](#usewindowsizetracker)
   - [useThemeFooterColors](#usethemefootercolors)
+  - [useWorkflowManager](#useworkflowmanager)
+  - [useWorkflowDragAndDrop](#useworkflowdraganddrop)
 - [数据类型](#数据类型)
 - [工具函数](#工具函数)
 - [命名规范](#命名规范)
@@ -1017,6 +1019,169 @@ const MyFooter = () => {
 };
 ```
 
+### useWorkflowManager
+
+**文件位置**: `frontend/src/features/workflowDesigner/hooks/useWorkflowManager.ts`  
+**功能**: 管理工作流状态、节点和连线的操作，以及与属性面板的交互
+
+#### 接口定义
+
+```typescript
+export const useWorkflowManager = (): WorkflowManagerHookResult => {
+  // 实现...
+}
+
+interface WorkflowManagerHookResult {
+  // 状态
+  nodes: Node[];
+  edges: Edge[];
+  selectedNode: { data: CustomNodeData, id: string } | null;
+  workflowStatus: WorkflowStatus;
+  nodeIdCounter: number;
+  
+  // 节点和边的更改处理
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  onConnect: OnConnect;
+  
+  // 节点选择和数据更改
+  handleNodeSelect: (node: Node) => void;
+  onNodeDataChange: (nodeId: string, newNodeData: Partial<CustomNodeData>) => void;
+  
+  // 工作流状态更新
+  updateWorkflowStatus: (status: Partial<WorkflowStatus>) => void;
+  
+  // 工作流操作
+  handleNew: () => void;
+  handleOpen: () => void;
+  handleSave: () => void;
+  handleRun: () => void;
+  
+  // 内部 Hooks 调用检查
+  isVariantOrPortChange: (newNodeData: Partial<CustomNodeData>) => boolean;
+  
+  // 状态设置器
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
+  setNodeIdCounter: React.Dispatch<React.SetStateAction<number>>;
+  setSelectedNode: React.Dispatch<React.SetStateAction<{ data: CustomNodeData, id: string } | null>>;
+}
+```
+
+#### 主要功能
+
+- **状态管理**：管理节点、边、选中节点和工作流状态
+- **节点连接验证**：在连接节点时验证端口类型兼容性
+- **变体处理**：处理节点变体切换和端口配置变更，包括处理受影响的连接
+- **工作流操作**：新建、打开、保存和运行工作流
+- **属性面板交互**：处理节点属性的更改
+
+#### 使用示例
+
+```tsx
+import { useWorkflowManager } from '../../../features/workflowDesigner/hooks/useWorkflowManager';
+
+const WorkflowDesigner = () => {
+  const {
+    nodes,
+    edges,
+    selectedNode,
+    workflowStatus,
+    nodeIdCounter,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    handleNodeSelect,
+    onNodeDataChange,
+    updateWorkflowStatus,
+    handleNew,
+    handleOpen,
+    handleSave,
+    handleRun
+  } = useWorkflowManager();
+  
+  return (
+    // 使用这些状态和函数渲染组件
+  );
+};
+```
+
+### useWorkflowDragAndDrop
+
+**文件位置**: `frontend/src/features/workflowDesigner/hooks/useWorkflowDragAndDrop.ts`  
+**功能**: 处理拖拽相关功能，包括从模块库到画布的拖拽和模块预览
+
+#### 接口定义
+
+```typescript
+export const useWorkflowDragAndDrop = (
+  contentRef: React.RefObject<HTMLDivElement>,
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>,
+  nodeIdCounter: number,
+  setNodeIdCounter: React.Dispatch<React.SetStateAction<number>>,
+  updateWorkflowStatus: (status: Partial<{ saved: boolean; nodeCount: number; edgeCount: number; }>) => void,
+  setSelectedNode: React.Dispatch<React.SetStateAction<{ data: CustomNodeData, id: string } | null>>
+): WorkflowDragAndDropHookResult => {
+  // 实现...
+}
+
+interface WorkflowDragAndDropHookResult {
+  // 状态
+  draggedModule: ModuleDefinition | null;
+  
+  // 事件处理
+  handleDragStart: (event: any) => void;
+  handleDragEnd: (event: any) => void;
+  handleDragCancel: () => void;
+  handleModulePreview: (moduleDefinition: ModuleDefinition) => void;
+}
+```
+
+#### 主要功能
+
+- **拖拽状态管理**：处理拖拽过程中的状态
+- **区分点击和拖拽**：根据鼠标移动的距离和时间区分点击和拖拽操作
+- **模块预览**：点击模块时显示预览，加载模块变体定义
+- **拖拽到画布**：处理将模块从库拖拽到画布的逻辑，创建新节点
+- **精确定位**：根据鼠标位置精确定位新创建的节点
+
+#### 使用示例
+
+```tsx
+import { useWorkflowDragAndDrop } from '../../../features/workflowDesigner/hooks/useWorkflowDragAndDrop';
+
+const WorkflowDesigner = () => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // 从 useWorkflowManager 获取
+  const { setNodes, nodeIdCounter, setNodeIdCounter, updateWorkflowStatus, setSelectedNode } = useWorkflowManager();
+  
+  const {
+    draggedModule,
+    handleDragStart,
+    handleDragEnd,
+    handleDragCancel,
+    handleModulePreview
+  } = useWorkflowDragAndDrop(
+    contentRef,
+    setNodes,
+    nodeIdCounter,
+    setNodeIdCounter,
+    updateWorkflowStatus,
+    setSelectedNode
+  );
+  
+  return (
+    <DndContext
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      {/* 组件内容 */}
+    </DndContext>
+  );
+};
+```
+
 ## 数据类型
 
 ### 工作流相关数据类型
@@ -1103,5 +1268,5 @@ const deserializeWorkflow = (json: string): { nodes: Node[], edges: Edge[] } => 
 
 ## 版本记录
 
-**当前版本**: 0.1.2
-**最近更新**: 2025-05-09 
+**当前版本**: 0.1.4
+**最近更新**: 2025-05-21 

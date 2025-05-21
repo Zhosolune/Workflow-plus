@@ -8,15 +8,15 @@ from .base_module import BaseModule, Port
 
 class Connection:
     """
-    连接类，表示两个端口之间的连接
+    连接类，表示两个模块的端口之间的连接
     """
-    def __init__(self, source_module_id: str, source_port_id: str, 
-                 target_module_id: str, target_port_id: str):
+    def __init__(self, source_module_id: str, source_port_name: str,
+                 target_module_id: str, target_port_name: str):
         self._id = str(uuid4())
         self._source_module_id = source_module_id
-        self._source_port_id = source_port_id
+        self._source_port_name = source_port_name
         self._target_module_id = target_module_id
-        self._target_port_id = target_port_id
+        self._target_port_name = target_port_name
     
     @property
     def id(self) -> str:
@@ -27,25 +27,25 @@ class Connection:
         return self._source_module_id
     
     @property
-    def source_port_id(self) -> str:
-        return self._source_port_id
+    def source_port_name(self) -> str:
+        return self._source_port_name
     
     @property
     def target_module_id(self) -> str:
         return self._target_module_id
     
     @property
-    def target_port_id(self) -> str:
-        return self._target_port_id
+    def target_port_name(self) -> str:
+        return self._target_port_name
     
     def to_dict(self) -> Dict[str, Any]:
         """将连接转换为字典"""
         return {
             "id": self._id,
             "source_module_id": self._source_module_id,
-            "source_port_id": self._source_port_id,
+            "source_port_name": self._source_port_name,
             "target_module_id": self._target_module_id,
-            "target_port_id": self._target_port_id
+            "target_port_name": self._target_port_name
         }
 
 
@@ -59,7 +59,6 @@ class Workflow:
         self._description = description
         self._modules: Dict[str, BaseModule] = {}
         self._connections: Dict[str, Connection] = {}
-        self._execution_data: Dict[str, Dict[str, Any]] = {}  # 存储执行过程中的数据
         
     @property
     def id(self) -> str:
@@ -111,68 +110,98 @@ class Workflow:
             return True
         return False
     
-    def connect(self, source_module_id: str, source_port_id: str, 
-                target_module_id: str, target_port_id: str) -> Optional[str]:
+    def _find_port_by_name(self, module: BaseModule, port_name: str, port_io_type: str) -> Optional[Port]:
+        """辅助函数：根据名称和类型查找端口对象"""
+        ports_dict = module.output_ports if port_io_type == 'output' else module.input_ports
+        for port in ports_dict.values(): # 遍历 Port 对象
+            if port.name == port_name:
+                return port
+        return None
+
+    def connect(self, source_module_id: str, source_port_name: str, 
+                target_module_id: str, target_port_name: str) -> Optional[str]:
         """
-        创建模块间的连接
+        创建模块间的连接 (基于端口名称)
         
         Args:
             source_module_id: 源模块ID
-            source_port_id: 源模块输出端口ID
+            source_port_name: 源模块输出端口名称
             target_module_id: 目标模块ID
-            target_port_id: 目标模块输入端口ID
+            target_port_name: 目标模块输入端口名称
             
         Returns:
             连接ID或None（如果连接失败）
         """
-        # 验证模块存在
         if source_module_id not in self._modules or target_module_id not in self._modules:
             return None
         
         source_module = self._modules[source_module_id]
         target_module = self._modules[target_module_id]
         
-        # 验证端口存在
-        if source_port_id not in source_module.output_ports:
+        # 根据端口名称查找实际的 Port 对象
+        source_port = self._find_port_by_name(source_module, source_port_name, 'output')
+        target_port = self._find_port_by_name(target_module, target_port_name, 'input')
+
+        if not source_port:
             return None
-        if target_port_id not in target_module.input_ports:
-            return None
-        
-        # 验证端口类型兼容
-        source_port = source_module.output_ports[source_port_id]
-        target_port = target_module.input_ports[target_port_id]
-        if source_port.type != target_port.type:
+        if not target_port:
             return None
         
-        # 创建连接
-        connection = Connection(source_module_id, source_port_id, target_module_id, target_port_id)
+        # 类型兼容性检查 (dev_plan.md 1.3.2)
+        # 简单实现：精确匹配。未来可以扩展为更灵活的兼容性规则。
+        if source_port.type != target_port.type and source_port.type != 'any' and target_port.type != 'any':
+            return None
+
+        connection = Connection(source_module_id, source_port_name, target_module_id, target_port_name)
         self._connections[connection.id] = connection
         
-        # 更新端口连接信息
-        source_port.connect(target_port.id)
-        target_port.connect(source_port.id)
+        # 更新 Port 对象的连接状态 (现在使用 port_name)
+        source_port.connect(target_port.name) # 连接到目标端口的名称
+        target_port.connect(source_port.name) # 连接到源端口的名称
         
         return connection.id
     
     def remove_connection(self, connection_id: str) -> bool:
-        """移除连接"""
-        if connection_id in self._connections:
-            conn = self._connections[connection_id]
+        """移除连接 (基于连接ID)"""
+        if connection_id not in self._connections:
+            return False
             
-            # 更新端口连接信息
-            if conn.source_module_id in self._modules and conn.source_port_id in self._modules[conn.source_module_id].output_ports:
-                source_port = self._modules[conn.source_module_id].output_ports[conn.source_port_id]
-                source_port.disconnect(conn.target_port_id)
+        conn = self._connections[connection_id]
+        
+        source_module = self._modules.get(conn.source_module_id)
+        target_module = self._modules.get(conn.target_module_id)
+        
+        if source_module:
+            source_port = self._find_port_by_name(source_module, conn.source_port_name, 'output')
+            if source_port:
+                source_port.disconnect(conn.target_port_name) # 断开与目标端口名称的连接
+        
+        if target_module:
+            target_port = self._find_port_by_name(target_module, conn.target_port_name, 'input')
+            if target_port:
+                target_port.disconnect(conn.source_port_name) # 断开与源端口名称的连接
             
-            if conn.target_module_id in self._modules and conn.target_port_id in self._modules[conn.target_module_id].input_ports:
-                target_port = self._modules[conn.target_module_id].input_ports[conn.target_port_id]
-                target_port.disconnect(conn.source_port_id)
-            
-            # 移除连接
-            del self._connections[connection_id]
-            return True
-        return False
-    
+        del self._connections[connection_id]
+        return True
+
+    def handle_module_variant_change(self, module_id: str, old_ports: Dict[str, Set[str]], new_ports: Dict[str, Set[str]]):
+        """
+        处理模块变体更改导致的端口变化，移除失效的连接。
+        old_ports/new_ports: {'input': {port_name1, port_name2}, 'output': {port_name3}}
+        """
+        removed_input_ports = old_ports.get('input', set()) - new_ports.get('input', set())
+        removed_output_ports = old_ports.get('output', set()) - new_ports.get('output', set())
+        
+        connections_to_remove = []
+        for conn_id, conn in self._connections.items():
+            if conn.source_module_id == module_id and conn.source_port_name in removed_output_ports:
+                connections_to_remove.append(conn_id)
+            elif conn.target_module_id == module_id and conn.target_port_name in removed_input_ports:
+                connections_to_remove.append(conn_id)
+        
+        for conn_id in connections_to_remove:
+            self.remove_connection(conn_id)
+
     def get_dependent_modules(self, module_id: str) -> Set[str]:
         """获取依赖指定模块的所有模块ID"""
         dependent_modules = set()
@@ -194,85 +223,32 @@ class Workflow:
         计算模块执行顺序（拓扑排序）
         返回模块ID列表，按执行顺序排列
         """
-        # 构建依赖图
-        graph = {module_id: set() for module_id in self._modules}
+        adj: Dict[str, List[str]] = {module_id: [] for module_id in self._modules}
+        in_degree: Dict[str, int] = {module_id: 0 for module_id in self._modules}
+
         for conn in self._connections.values():
-            if conn.source_module_id in graph and conn.target_module_id in graph:
-                graph[conn.target_module_id].add(conn.source_module_id)
-        
-        # 计算入度
-        in_degree = {module_id: 0 for module_id in self._modules}
-        for module_id, dependencies in graph.items():
-            for dep in dependencies:
-                in_degree[module_id] += 1
-        
-        # 拓扑排序
-        queue = deque([module_id for module_id, degree in in_degree.items() if degree == 0])
-        result = []
+            # 确保模块存在于 adj 和 in_degree 中 (理论上应该存在，因为它们来自 self._modules)
+            if conn.source_module_id in adj and conn.target_module_id in adj:
+                adj[conn.source_module_id].append(conn.target_module_id)
+                in_degree[conn.target_module_id] += 1
+
+        queue = deque([module_id for module_id in self._modules if in_degree[module_id] == 0])
+        result_order: List[str] = []
         
         while queue:
-            current = queue.popleft()
-            result.append(current)
+            u = queue.popleft()
+            result_order.append(u)
             
-            # 更新依赖此模块的模块入度
-            dependent_modules = self.get_dependent_modules(current)
-            for dep_module in dependent_modules:
-                in_degree[dep_module] -= 1
-                if in_degree[dep_module] == 0:
-                    queue.append(dep_module)
+            for v in adj.get(u, []): # 使用 adj.get(u, []) 避免因模块移除等边缘情况导致的KeyError
+                if v in in_degree: # 确保 v 存在于 in_degree
+                    in_degree[v] -= 1
+                    if in_degree[v] == 0:
+                        queue.append(v)
         
-        # 检查是否有环
-        if len(result) != len(self._modules):
-            raise ValueError("工作流中存在循环依赖")
+        if len(result_order) != len(self._modules):
+            raise ValueError("工作流中存在循环依赖，无法确定执行顺序。")
             
-        return result
-    
-    def execute(self) -> Dict[str, Any]:
-        """
-        执行整个工作流
-        
-        Returns:
-            执行结果，包含每个模块的输出
-        """
-        # 重置执行数据
-        self._execution_data = {}
-        
-        try:
-            # 获取执行顺序
-            execution_order = self._get_execution_order()
-            
-            # 按顺序执行模块
-            for module_id in execution_order:
-                module = self._modules[module_id]
-                
-                # 准备输入数据
-                inputs = {}
-                for port_id, port in module.input_ports.items():
-                    for source_port_id in port.connected_to:
-                        # 查找连接到此输入端口的输出端口
-                        for conn in self._connections.values():
-                            if conn.target_port_id == port_id and conn.source_port_id == source_port_id:
-                                # 获取源模块的输出数据
-                                source_module_id = conn.source_module_id
-                                if source_module_id in self._execution_data and source_port_id in self._execution_data[source_module_id]:
-                                    inputs[port_id] = self._execution_data[source_module_id][source_port_id]
-                
-                # 执行模块
-                module._execution_status = "running"
-                try:
-                    outputs = module.execute(inputs)
-                    module._execution_status = "completed"
-                    
-                    # 存储输出数据
-                    self._execution_data[module_id] = outputs
-                except Exception as e:
-                    module._execution_status = "error"
-                    module._error_message = str(e)
-                    raise RuntimeError(f"模块 '{module.name}' (ID: {module_id}) 执行失败: {str(e)}")
-            
-            return self._execution_data
-        except Exception as e:
-            raise RuntimeError(f"工作流执行失败: {str(e)}")
+        return result_order
     
     def to_dict(self) -> Dict[str, Any]:
         """将工作流转换为字典，用于序列化"""
@@ -290,13 +266,13 @@ class Workflow:
             json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
     
     @classmethod
-    def load(cls, filepath: str, module_registry: Dict[str, type]) -> 'Workflow':
+    def load(cls, filepath: str, module_registry_instance) -> 'Workflow':
         """
         从文件加载工作流
         
         Args:
             filepath: 文件路径
-            module_registry: 模块注册表，键为模块类型名称，值为模块类
+            module_registry_instance: 模块注册表实例
             
         Returns:
             工作流实例
@@ -304,39 +280,49 @@ class Workflow:
         with open(filepath, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        # 创建工作流
         workflow = cls(data['name'], data.get('description', ''))
-        workflow._id = data['id']
+        workflow._id = data.get('id', str(uuid4()))
         
         # 创建模块
-        for module_id, module_data in data['modules'].items():
-            module_type = module_data.get('type', 'BaseModule')
-            if module_type not in module_registry:
-                raise ValueError(f"未知的模块类型: {module_type}")
+        for module_id, module_data in data.get('modules', {}).items():
+            module_type_name = module_data.get('module_type')
+            if not module_type_name:
+                module_type_name = module_data.get('name')
+
+            if not module_type_name or not module_registry_instance.get(module_type_name):
+                raise ValueError(f"加载失败：未知的模块类型 '{module_type_name}' 或模块未在注册表中注册。模块数据: {module_data}")
             
-            module_class = module_registry[module_type]
-            module = module_class.from_dict(module_data)
-            workflow._modules[module_id] = module
-        
-        # 创建连接
-        for conn_id, conn_data in data['connections'].items():
-            connection = Connection(
-                conn_data['source_module_id'],
-                conn_data['source_port_id'],
-                conn_data['target_module_id'],
-                conn_data['target_port_id']
+            module_instance = module_registry_instance.create_instance(
+                module_type_name,
+                name=module_data.get('name'),
+                description=module_data.get('description'),
+                initial_variant_id=module_data.get('current_variant_id'),
+                initial_ports_config=module_data.get('current_ports_config')
             )
-            workflow._connections[conn_id] = connection
             
-            # 更新端口连接信息
-            if (conn_data['source_module_id'] in workflow._modules and 
-                conn_data['source_port_id'] in workflow._modules[conn_data['source_module_id']].output_ports):
-                source_port = workflow._modules[conn_data['source_module_id']].output_ports[conn_data['source_port_id']]
-                source_port.connect(conn_data['target_port_id'])
-            
-            if (conn_data['target_module_id'] in workflow._modules and 
-                conn_data['target_port_id'] in workflow._modules[conn_data['target_module_id']].input_ports):
-                target_port = workflow._modules[conn_data['target_module_id']].input_ports[conn_data['target_port_id']]
-                target_port.connect(conn_data['source_port_id'])
+            if not module_instance:
+                raise ValueError(f"无法为类型 '{module_type_name}' 创建模块实例。")
+
+            module_instance._id = module_data.get('id', module_id)
+            module_instance._parameters = module_data.get('parameters', {})
+            module_instance.position = tuple(module_data.get('position', (0.0, 0.0)))
+
+            workflow._modules[module_instance.id] = module_instance
+        
+        # 创建连接 (在所有模块都已创建并应用变体后)
+        for conn_id, conn_data in data.get('connections', {}).items():
+            source_module_id = conn_data['source_module_id']
+            target_module_id = conn_data['target_module_id']
+            source_port_name = conn_data['source_port_name']
+            target_port_name = conn_data['target_port_name']
+
+            conn_result_id = workflow.connect(
+                source_module_id, 
+                source_port_name, 
+                target_module_id, 
+                target_port_name
+            )
+            if conn_result_id:
+                pass
         
         return workflow 

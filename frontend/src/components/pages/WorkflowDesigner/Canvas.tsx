@@ -1,39 +1,49 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react'; //确保 useState 和 useEffect 已导入
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   ReactFlow,
   BackgroundVariant,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
-  addEdge,
-  Connection,
   Edge,
   Node,
   NodeTypes,
   OnConnect,
   ConnectionLineType,
-  Position,
   MiniMap,
+  OnNodesChange, // Added for prop type
+  OnEdgesChange, // Added for prop type
+  OnSelectionChangeFunc, // 添加选择变化事件类型
+  ReactFlowInstance, // 添加ReactFlowInstance类型
+  useReactFlow, // 添加useReactFlow钩子
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { DndContext } from '@dnd-kit/core';
 import { useDroppable } from '@dnd-kit/core';
+import CustomNode from './CustomNode';
 
-// 默认节点数据
-const initialNodes: Node[] = [];
-const initialEdges: Edge[] = [];
+// 默认节点数据 - 如果父组件管理，这里可以移除
+// const initialNodes: Node[] = [];
+// const initialEdges: Edge[] = [];
 
-// 自定义节点类型 - 移到组件外部
-const nodeTypesProp: NodeTypes = {};
+// 自定义节点类型 - 移到组件外部 (保持不变)
+const nodeTypesProp: NodeTypes = {
+  customNode: CustomNode,
+};
 
-// 画布属性接口
+// 画布属性接口 - 更新以接收新的props
 interface CanvasProps {
-  onNodeSelect: (node: any) => void;
-  updateWorkflowStatus: (status: any) => void;
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  onConnect: OnConnect;
+
+  onNodeSelect: (nodeData: any) => void; // nodeData type can be more specific
+  updateWorkflowStatus: (status: Partial<{ saved: boolean; nodeCount: number; edgeCount: number; }>) => void;
   moduleLibraryWidth: number; 
   propertyPanelWidth: number; 
-  contentWidth: number; // 新增：接收 contentWidth
+  contentWidth: number;
+  // 添加React Flow实例回调
+  onReactFlowInstanceChange?: (instance: ReactFlowInstance) => void;
 }
 
 /**
@@ -41,135 +51,75 @@ interface CanvasProps {
  * 使用React Flow实现节点拖拽和连接
  */
 const Canvas: React.FC<CanvasProps> = ({ 
+  nodes, // New prop
+  edges, // New prop
+  onNodesChange, // New prop
+  onEdgesChange, // New prop
+  onConnect, // New prop
   onNodeSelect, 
-  updateWorkflowStatus,
+  updateWorkflowStatus, // Still used for node click selection if needed, or by parent
   moduleLibraryWidth,    
   propertyPanelWidth,    
-  contentWidth          // 新增
-}) => {
-  // 节点和连线状态管理
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  
-  // 节点计数器（用于生成唯一ID）
-  const [nodeIdCounter, setNodeIdCounter] = useState(1);
-  
-  // 新增：控制 Controls 和 MiniMap 的显示状态
+  contentWidth,
+  onReactFlowInstanceChange // 添加React Flow实例回调
+}) => {  
+  // 控制 Controls 和 MiniMap 的显示状态
   const [showUiElements, setShowUiElements] = useState(true);
 
-  // 使用useMemo缓存nodeTypes
+  // 使用useMemo缓存nodeTypes (保持不变)
   const nodeTypes = useMemo(() => nodeTypesProp, []);
   
-  // 处理节点连接
-  const onConnect: OnConnect = useCallback(
-    (connection: Connection) => {
-      // 创建新连线
-      setEdges((eds: Edge[]) => addEdge({
-        ...connection,
-        type: 'smoothstep',
-        animated: true,
-      }, eds));
-      
-      // 更新状态
-      updateWorkflowStatus({ saved: false });
-    },
-    [setEdges, updateWorkflowStatus]
-  );
-  
-  // 处理节点选择
+  // 处理节点选择 - 为了保持兼容性
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      onNodeSelect(node.data);
+      onNodeSelect(node); // 保留原来的节点选择逻辑，以保持兼容性
     },
     [onNodeSelect]
   );
   
-  // 监听节点和连线数量变化，更新状态
-  // 修复：仅在节点或连线数量变化时更新状态，避免无限循环
-  useEffect(() => {
-    // 只有当节点或连线数量大于0时才更新状态
-    if (nodes.length > 0 || edges.length > 0) {
-      updateWorkflowStatus({
-        nodeCount: nodes.length,
-        edgeCount: edges.length,
-        saved: false,
-      });
-    }
-  }, [nodes.length, edges.length, updateWorkflowStatus]);
+  // 处理选择变化事件
+  const onSelectionChange: OnSelectionChangeFunc = useCallback(
+    ({ nodes }) => {
+      // 当有节点被选中时，触发 onNodeSelect 回调
+      if (nodes && nodes.length === 1) {
+        onNodeSelect(nodes[0]);
+      }
+    },
+    [onNodeSelect]
+  );
 
-  // 新增：根据可用空间判断是否显示 Controls 和 MiniMap
+  // 处理实例加载
+  const onInit = useCallback(
+    (instance: ReactFlowInstance) => {
+      if (onReactFlowInstanceChange) {
+        onReactFlowInstanceChange(instance);
+      }
+    },
+    [onReactFlowInstanceChange]
+  );
+
+  // 根据可用空间判断是否显示 Controls 和 MiniMap
   useEffect(() => {
     if (contentWidth > 0 && moduleLibraryWidth > 0 && propertyPanelWidth > 0) {
-      // 计算 Controls 和 MiniMap 左侧和右侧的可用空间
-      // Controls 左侧需要 moduleLibraryWidth + 20px
-      // MiniMap 右侧需要 propertyPanelWidth + 20px
-      // 它们自身也需要宽度：Controls ~54px, MiniMap ~200px
-      // 还需要它们之间有一定的间隙，例如 50px
       const reservedSpaceForPanelsAndOffsets = moduleLibraryWidth + propertyPanelWidth;
-      const minSpaceForControlsAndMinimap = 54 + 200 + 40 + 50; // ControlsWidth + MiniMapWidth + Offsets (20*2) + MinGap
-      
+      const minSpaceForControlsAndMinimap = 54 + 200 + 40 + 50; 
       const availableCentralSpace = contentWidth - reservedSpaceForPanelsAndOffsets;
-      
-      // 阈值可以根据实际视觉效果调整
       const HIDE_UI_THRESHOLD = minSpaceForControlsAndMinimap; 
-      
       setShowUiElements(availableCentralSpace >= HIDE_UI_THRESHOLD);
     } else if (contentWidth === 0) {
-      // 初始加载时 contentWidth 可能为0，默认显示
       setShowUiElements(true);
     }
   }, [contentWidth, moduleLibraryWidth, propertyPanelWidth]);
 
-  // 拖拽放置处理
+  // 拖拽放置处理 - useDroppable 保持不变
   const { setNodeRef } = useDroppable({
-    id: 'canvas-drop-area',
+    id: 'canvas-drop-area', // This ID is used by the parent's onDragEnd handler
   });
   
-  // 处理拖拽放置
-  const handleDrop = useCallback((event: any) => {
-    const { active } = event;
-    if (!active || !active.data || !active.data.current) return;
-    
-    const moduleData = active.data.current;
-    
-    // 获取画布元素位置
-    const canvasElement = document.querySelector('.react-flow');
-    if (!canvasElement) return;
-    const rect = canvasElement.getBoundingClientRect();
-    
-    // 计算放置坐标
-    const position = {
-      x: event.delta.x - rect.left + window.scrollX,
-      y: event.delta.y - rect.top + window.scrollY,
-    };
-    
-    // 创建新节点
-    const newNode: Node = {
-      id: `node-${nodeIdCounter}`,
-      position,
-      data: { 
-        ...moduleData,
-        label: moduleData.name,
-      },
-      style: { 
-        width: 180, 
-        padding: 10,
-      },
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-    };
-    
-    // 添加新节点
-    setNodes((nds: Node[]) => [...nds, newNode]);
-    setNodeIdCounter((prev) => prev + 1);
-    
-    // 更新状态在useEffect中处理，避免这里重复调用
-  }, [nodeIdCounter, setNodes]);
-  
   return (
-    <DndContext onDragEnd={handleDrop}>
+    // <DndContext onDragEnd={handleDrop}> // REMOVED DndContext wrapper
       <div
-        ref={setNodeRef}
+        ref={setNodeRef} // This ref is for useDroppable
         style={{
           position: 'absolute',
           top: 0,
@@ -180,17 +130,18 @@ const Canvas: React.FC<CanvasProps> = ({
         }}
       >
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          nodes={nodes} // Use prop
+          edges={edges} // Use prop
+          onNodesChange={onNodesChange} // Use prop
+          onEdgesChange={onEdgesChange} // Use prop
+          onConnect={onConnect} // Use prop
           onNodeClick={onNodeClick}
+          onSelectionChange={onSelectionChange}
           nodeTypes={nodeTypes}
           connectionLineType={ConnectionLineType.SmoothStep}
           snapToGrid={true}
           snapGrid={[15, 15]}
-          fitView
+          onInit={onInit} // 添加onInit回调
         >
           <Background 
             variant={BackgroundVariant.Dots} 
@@ -198,14 +149,12 @@ const Canvas: React.FC<CanvasProps> = ({
             size={1} 
             color="#888" 
           />
-          {/* 根据 showUiElements 状态条件渲染 Controls */}
           {showUiElements && (
             <Controls 
               position="bottom-left" 
               style={{ left: moduleLibraryWidth + 20, bottom: 20 }} 
             />
           )}
-          {/* 根据 showUiElements 状态条件渲染 MiniMap */}
           {showUiElements && (
             <MiniMap 
               position="bottom-right"
@@ -216,7 +165,7 @@ const Canvas: React.FC<CanvasProps> = ({
           )}
         </ReactFlow>
       </div>
-    </DndContext>
+    // </DndContext> // REMOVED DndContext wrapper
   );
 };
 
