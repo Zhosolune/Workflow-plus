@@ -16,6 +16,10 @@ import { fetchModuleVariantDefinitions } from '../services/moduleService';
 import { generateNodeId } from '../utils/workflowUtils';
 import { CustomNodeData } from '../../../components/pages/WorkflowDesigner/CustomNode';
 
+// 自定义节点的默认尺寸
+const NODE_DEFAULT_WIDTH = 180;   // 与CustomNode.tsx中设置的宽度一致
+const NODE_DEFAULT_HEIGHT = 100;  // 预估的节点高度
+
 /**
  * 工作流拖拽Hook
  * 
@@ -42,6 +46,15 @@ export const useWorkflowDragAndDrop = (
   const dragStartRef = useRef<DragStartInfo | null>(null);
   
   /**
+   * 更新鼠标位置的函数
+   */
+  const updateMousePosition = useCallback((clientX: number, clientY: number) => {
+    if (dragStartRef.current) {
+      dragStartRef.current.lastPosition = { x: clientX, y: clientY };
+    }
+  }, []);
+  
+  /**
    * 处理拖拽开始事件
    * @param event 拖拽开始事件
    */
@@ -49,27 +62,54 @@ export const useWorkflowDragAndDrop = (
     const { active, activatorEvent } = event;
     if (active && active.data && active.data.current && 'id' in active.data.current && 'name' in active.data.current) {
       setDraggedModule(active.data.current as ModuleDefinition);
+      
       // 记录拖拽起始信息
       if (activatorEvent instanceof MouseEvent || activatorEvent instanceof TouchEvent) {
         const clientX = activatorEvent instanceof MouseEvent ? activatorEvent.clientX : activatorEvent.touches[0].clientX;
         const clientY = activatorEvent instanceof MouseEvent ? activatorEvent.clientY : activatorEvent.touches[0].clientY;
+        
+        // 添加鼠标移动事件监听器
+        const handleMouseMove = (e: MouseEvent) => {
+          updateMousePosition(e.clientX, e.clientY);
+        };
+        
+        const handleTouchMove = (e: TouchEvent) => {
+          if (e.touches.length > 0) {
+            updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        };
+        
+        // 添加事件监听器
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('touchmove', handleTouchMove);
+        
         dragStartRef.current = {
           x: clientX,
           y: clientY,
           time: Date.now(),
           targetId: active.id.toString(), // 假设 active.id 可以转为 string
+          lastPosition: { x: clientX, y: clientY }, // 初始位置与开始位置相同
+          cleanupFunctions: [
+            () => document.removeEventListener('mousemove', handleMouseMove),
+            () => document.removeEventListener('touchmove', handleTouchMove)
+          ]
         };
       }
     } else {
       setDraggedModule(null);
       dragStartRef.current = null;
     }
-  }, []);
+  }, [updateMousePosition]);
   
   /**
    * 处理拖拽取消事件
    */
   const handleDragCancel = useCallback(() => {
+    // 移除所有事件监听器
+    if (dragStartRef.current && dragStartRef.current.cleanupFunctions) {
+      dragStartRef.current.cleanupFunctions.forEach(cleanup => cleanup());
+    }
+    
     setDraggedModule(null);
     dragStartRef.current = null;
   }, []);
@@ -123,7 +163,13 @@ export const useWorkflowDragAndDrop = (
    */
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      const { active, over, activatorEvent } = event;
+      const { active, over } = event;
+      
+      // 首先清理事件监听器
+      if (dragStartRef.current && dragStartRef.current.cleanupFunctions) {
+        dragStartRef.current.cleanupFunctions.forEach(cleanup => cleanup());
+      }
+      
       setDraggedModule(null);
 
       const dragStartData = dragStartRef.current;
@@ -135,8 +181,11 @@ export const useWorkflowDragAndDrop = (
 
       // 判断是点击还是拖拽
       const now = Date.now();
-      const clientX = activatorEvent instanceof MouseEvent ? activatorEvent.clientX : (activatorEvent as TouchEvent).changedTouches[0].clientX;
-      const clientY = activatorEvent instanceof MouseEvent ? activatorEvent.clientY : (activatorEvent as TouchEvent).changedTouches[0].clientY;
+      
+      // 从dragStartData中获取最后的鼠标位置
+      const lastPosition = dragStartData.lastPosition || { x: dragStartData.x, y: dragStartData.y };
+      const clientX = lastPosition.x;
+      const clientY = lastPosition.y;
       
       const deltaX = Math.abs(clientX - dragStartData.x);
       const deltaY = Math.abs(clientY - dragStartData.y);
@@ -167,18 +216,18 @@ export const useWorkflowDragAndDrop = (
         const moduleData = active.data.current as any; // Re-alias for clarity
 
         const canvasElement = contentRef.current?.querySelector('.react-flow');
-        // activatorEvent 应该存在，因为我们已经检查了 dragStartData
-        if (!canvasElement || !(activatorEvent instanceof MouseEvent || activatorEvent instanceof TouchEvent)) return;
+        if (!canvasElement) return;
 
-        // 使用 activatorEvent (指针事件) 的 clientX/clientY 进行精确放置
-        const pointerClientX = activatorEvent instanceof MouseEvent ? activatorEvent.clientX : activatorEvent.changedTouches[0].clientX;
-        const pointerClientY = activatorEvent instanceof MouseEvent ? activatorEvent.clientY : activatorEvent.changedTouches[0].clientY;
+        // 使用最后记录的鼠标位置，而不是开始时的位置
+        const pointerClientX = clientX;
+        const pointerClientY = clientY;
 
         const canvasRect = canvasElement.getBoundingClientRect();
         
+        // 计算节点位置，需要从鼠标位置减去节点一半的宽度和高度，以便使节点中心对齐鼠标位置
         const position = {
-          x: pointerClientX - canvasRect.left + canvasElement.scrollLeft,
-          y: pointerClientY - canvasRect.top + canvasElement.scrollTop,
+          x: (pointerClientX - canvasRect.left + canvasElement.scrollLeft) - (NODE_DEFAULT_WIDTH / 2),
+          y: (pointerClientY - canvasRect.top + canvasElement.scrollTop) - (NODE_DEFAULT_HEIGHT / 2),
         };
 
         // 获取变体定义
@@ -206,7 +255,7 @@ export const useWorkflowDragAndDrop = (
           label: moduleData.name,
           availableVariants: availableVariants || [],
           currentVariantId: defaultVariantId,
-          activePortsConfig: initialActivePortsConfig,
+          activePortsConfig: initialActivePortsConfig,  
         };
         
         const newNode: Node = {
